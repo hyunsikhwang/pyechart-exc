@@ -4,6 +4,8 @@ from streamlit_echarts import st_pyecharts
 import streamlit as st
 
 
+st.header("pyechart treemap sample")
+
 data = [
     {
         "value": 40,
