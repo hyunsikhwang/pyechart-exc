@@ -31,6 +31,7 @@ line = Line()
 for itm in json.loads(response.text)['fear_and_greed_historical']['data']:
     x_axis.append(datetime.fromtimestamp(itm['x']/1000).strftime('%Y-%m-%d'))
     y_axis.append(itm['y'])
+    last_y = itm['y']
 
 line = (
     Line(init_opts=opts.InitOpts(width="100%", height="800px"))
@@ -38,7 +39,7 @@ line = (
     .add_yaxis('Index',
                y_axis,
                markpoint_opts=opts.MarkPointOpts(
-                data=[opts.MarkPointItem(name="Current", type_=None, coord=[x_axis[-1], y_axis[-1]], value=0)]),
+                data=[opts.MarkPointItem(name="Current", type_=None, coord=[x_axis[-1], y_axis[-1]], value=last_y)]),
                is_smooth=True,
                is_step=False,
                label_opts=opts.LabelOpts(
