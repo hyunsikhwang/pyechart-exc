@@ -56,6 +56,7 @@ line = (
                 opts.MarkAreaItem(name="GREED", y=(55, 75), itemstyle_opts=opts.ItemStyleOpts(color="green")),
                 opts.MarkAreaItem(name="EXTREME GREED", y=(75, 100), itemstyle_opts=opts.ItemStyleOpts(color="blue")),
             ],
+            opacity=0.5,
     ))
     .set_global_opts(
         title_opts=opts.TitleOpts(title="CNN Fear and Greed Index"),
