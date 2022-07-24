@@ -54,7 +54,7 @@ line = (
             )
         ),
         xaxis_opts=opts.AxisOpts(interval=0)
-    ),
+    )
     .render_embed()
 )
 #line.render()
