@@ -60,5 +60,5 @@ line = (
 #line.render()
 
 
-st_pyecharts(line)
-#components.html(line, height=800)
+#st_pyecharts(line)
+components.html(line)
