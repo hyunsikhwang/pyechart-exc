@@ -62,6 +62,5 @@ line = (
 )
 #line.render()
 
-st.write(y_axis[-1])
 #st_pyecharts(line)
 components.html(line, height=800)
