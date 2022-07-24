@@ -9,6 +9,8 @@ import bs4
 import json
 
 
+st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
+
 st.header("pyechart")
 
 
@@ -56,4 +58,4 @@ line = (
 #line.render()
 
 
-st_pyecharts(line)
+st_pyecharts(line, width=1000, height=800)
