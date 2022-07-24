@@ -48,6 +48,10 @@ line = (
                ),
                markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
     )
+    .set_series_opts(markarea_opts=opts.MarkAreaOpts(
+            data=[
+                opts.MarkAreaItem(name="Level", y=(0, 0.25, 0.5, 0.75, 1)),
+            ])
     .set_global_opts(
         title_opts=opts.TitleOpts(title="CNN Fear and Greed Index"),
         tooltip_opts=opts.TooltipOpts(
