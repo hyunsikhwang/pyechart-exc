@@ -61,4 +61,4 @@ line = (
 
 
 #st_pyecharts(line, width=1000, height=800)
-components.html(line)
+components.html(line, height=800)
