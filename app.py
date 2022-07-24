@@ -55,7 +55,8 @@ line = (
                 "function (params) {return params.value[0] + '<br>' + params.value[1].toFixed(1);}"
             )
         ),
-        xaxis_opts=opts.AxisOpts(interval=0)
+        xaxis_opts=opts.AxisOpts(interval=0,
+                                 boundary_gap=False,)
     )
     .render_embed()
 )
