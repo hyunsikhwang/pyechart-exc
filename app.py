@@ -37,6 +37,8 @@ line = (
     .add_xaxis(x_axis)
     .add_yaxis('Index',
                y_axis,
+               markpoint_opts=opts.MarkPointOpts(
+                data=[opts.MarkPointItem(name="Current", coord=[x_axis[len(x_axis)-1], y_axis[len(y_axis)-1]], value=y_axis[len(y_axis)-1])],
                is_smooth=True,
                is_step=False,
                label_opts=opts.LabelOpts(
