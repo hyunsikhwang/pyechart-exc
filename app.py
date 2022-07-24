@@ -3,6 +3,7 @@ from streamlit_echarts import st_pyecharts
 import streamlit as st
 from pyecharts.charts import Line
 from pyecharts.commons.utils import JsCode
+import streamlit.components.v1 as components
 from datetime import datetime
 import requests
 import bs4
@@ -53,9 +54,11 @@ line = (
             )
         ),
         xaxis_opts=opts.AxisOpts(interval=0)
-    )
+    ),
+    .render_embed()
 )
 #line.render()
 
 
-st_pyecharts(line, width=1000, height=800)
+#st_pyecharts(line, width=1000, height=800)
+components.html(line, use_container_width=True)
