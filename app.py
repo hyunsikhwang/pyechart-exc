@@ -50,9 +50,13 @@ line = (
     )
     .set_series_opts(markarea_opts=opts.MarkAreaOpts(
             data=[
-                opts.MarkAreaItem(name="Level", y=(0, 25, 50, 75, 100)),
-            ])
-    )
+                opts.MarkAreaItem(name="EXTREME FEAR", y=(0, 25), itemstyle_opts=opts.ItemStyleOpts(color="red")),
+                opts.MarkAreaItem(name="FEAR", y=(25, 45), itemstyle_opts=opts.ItemStyleOpts(color="orange")),
+                opts.MarkAreaItem(name="NEUTRAL", y=(45, 55), itemstyle_opts=opts.ItemStyleOpts(color="yellow")),
+                opts.MarkAreaItem(name="GREED", y=(55, 75), itemstyle_opts=opts.ItemStyleOpts(color="green")),
+                opts.MarkAreaItem(name="EXTREME GREED", y=(75, 100), itemstyle_opts=opts.ItemStyleOpts(color="blue")),
+            ],
+    ))
     .set_global_opts(
         title_opts=opts.TitleOpts(title="CNN Fear and Greed Index"),
         tooltip_opts=opts.TooltipOpts(
