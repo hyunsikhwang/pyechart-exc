@@ -33,7 +33,7 @@ for itm in json.loads(response.text)['fear_and_greed_historical']['data']:
     y_axis.append(itm['y'])
 
 line = (
-    Line(init_opts=opts.InitOpts(width="1200px", height="800px"))
+    Line(init_opts=opts.InitOpts(width="100%", height="800px"))
     .add_xaxis(x_axis)
     .add_yaxis('Index',
                y_axis,
@@ -60,5 +60,5 @@ line = (
 #line.render()
 
 
-#st_pyecharts(line, width=1000, height=800)
-components.html(line, height=800)
+st_pyecharts(line)
+#components.html(line, height=800)
