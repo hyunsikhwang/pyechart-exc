@@ -2,3 +2,4 @@ streamlit
 streamlit-echarts
 pyecharts
 bs4
+lxml
