@@ -192,12 +192,12 @@ df_new['TRD_DD'] = df_new['TRD_DD'].dt.strftime('%Y-%m-%d')
 #df_new.to_excel('gdp.xlsx')
 
 
-'''
-1. 최초시점 비율을 기준으로 함
-2. 매년 1월 1일자 위치에 "최초시점 비율" * GDP(AnnSum) 입력
-2-1. 맨 처음 record 와 맨 마지막 record 에도 위의 수식 적용
-3. 연간 값은 linear interpolation 처리
-'''
+
+# 1. 최초시점 비율을 기준으로 함
+# 2. 매년 1월 1일자 위치에 "최초시점 비율" * GDP(AnnSum) 입력
+# 2-1. 맨 처음 record 와 맨 마지막 record 에도 위의 수식 적용
+# 3. 연간 값은 linear interpolation 처리
+
 
 # 최초시점 비율
 #initRatio = df_new.loc[0, 'Ratio_KOSPI']
