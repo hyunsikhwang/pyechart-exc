@@ -4,3 +4,4 @@ pyecharts
 bs4
 lxml
 plotly
+scipy
