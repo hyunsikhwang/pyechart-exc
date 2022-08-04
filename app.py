@@ -238,36 +238,96 @@ fig_KOSPI = px.line(df_new, x='TRD_DD', y=['MKTCAP_KOSPI'], custom_data=['Ratio_
 fig_KOSPI.update_xaxes(showspikes=True, dtick="M12")
 fig_KOSPI.update_traces(hovertemplate="<br>".join(["%{customdata[0]:.2%}", "KOSPI Index: %{customdata[1]}"]), line_color='navy', line_width=1.5)
 
-opacity = 0.4
+x_data = list(df_new['TRD_DD'].dt.strftime("%Y-%m-%d"))
+y_data = list(df_new['MKTCAP_KOSPI'])
+y_max = df_new['MKTCAP_KOSPI'].max()*1.1
 
-#blue
-fig_KOSPI.add_traces(go.Scatter(x=df_new['TRD_DD'], y=df_new[bandMin],
-                            line = dict(color='rgba(0,0,0,0)'),
-                            fill='tonexty', 
-                            fillcolor=f'rgba(0, 255, 255, {opacity})'))
-#green
-fig_KOSPI.add_traces(go.Scatter(x=df_new['TRD_DD'], y=df_new[bandLow],
-                            line = dict(color='rgba(0,0,0,0)'),
-                            fill='tonexty', 
-                            fillcolor=f'rgba(0, 255, 0, {opacity})'))
-#yellow
-fig_KOSPI.add_traces(go.Scatter(x=df_new['TRD_DD'], y=df_new[bandHigh],
-                            line = dict(color='rgba(0,0,0,0)'),
-                            fill='tonexty', 
-                            fillcolor=f'rgba(255, 255, 0, {opacity})'))
-#orange
-fig_KOSPI.add_traces(go.Scatter(x=df_new['TRD_DD'], y=df_new[bandMax],
-                            line = dict(color='rgba(0,0,0,0)'),
-                            fill='tonexty',
-                            fillcolor=f'rgba(255, 165, 0, {opacity})'))
-#red
-fig_KOSPI.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=f"rgba(255, 0, 0, {opacity})")
-
-#fig_KOSPI.show()
-
+y_bandMin = list(df_new[bandMin])
+y_bandLow = list(df_new[bandLow]-df_new[bandMin])
+y_bandHigh = list(df_new[bandHigh]-df_new[bandLow])
+y_bandMax = list(df_new[bandMax]-df_new[bandHigh])
+y_bandLimit = list(y_max-df_new[bandMax])
 
 
 with tab2:
     st.subheader("Buffet Index")
 
-    st.plotly_chart(fig_KOSPI)
+    line_buffet = (
+        Line()
+        .add_xaxis(xaxis_data=x_data)
+        .add_yaxis(
+            series_name="",
+            y_axis=y_data,
+            symbol="emptyCircle",
+            is_symbol_show=False,
+            label_opts=opts.LabelOpts(is_show=False),
+        )
+        .add_yaxis(
+            series_name="Significantly Undervalued",
+            y_axis=y_bandMin,
+            symbol="emptyCircle",
+            stack="Total",
+            is_symbol_show=False,
+            label_opts=opts.LabelOpts(is_show=False),
+            areastyle_opts=opts.AreaStyleOpts(opacity=0.4, color="blue"),
+            linestyle_opts=opts.LineStyleOpts(opacity=0),
+        )
+        .add_yaxis(
+            series_name="Modestly Undervalued",
+            y_axis=y_bandLow,
+            symbol="emptyCircle",
+            stack="Total",
+            is_symbol_show=False,
+            label_opts=opts.LabelOpts(is_show=False),
+            areastyle_opts=opts.AreaStyleOpts(opacity=0.4, color="green"),
+            linestyle_opts=opts.LineStyleOpts(opacity=0),
+        )
+        .add_yaxis(
+            series_name="Fair Valued",
+            y_axis=y_bandHigh,
+            symbol="emptyCircle",
+            stack="Total",
+            is_symbol_show=False,
+            label_opts=opts.LabelOpts(is_show=False),
+            areastyle_opts=opts.AreaStyleOpts(opacity=0.4, color="yellow"),
+            linestyle_opts=opts.LineStyleOpts(opacity=0),
+        )
+        .add_yaxis(
+            series_name="Modestly Overvalued",
+            y_axis=y_bandMax,
+            symbol="emptyCircle",
+            stack="Total",
+            is_symbol_show=False,
+            label_opts=opts.LabelOpts(is_show=False),
+            areastyle_opts=opts.AreaStyleOpts(opacity=0.4, color="orange"),
+            linestyle_opts=opts.LineStyleOpts(opacity=0),
+        )
+        .add_yaxis(
+            series_name="Significantly Overvalued",
+            y_axis=y_bandLimit,
+            symbol="emptyCircle",
+            stack="Total",
+            is_symbol_show=False,
+            label_opts=opts.LabelOpts(is_show=False),
+            areastyle_opts=opts.AreaStyleOpts(opacity=0.4, color="red"),
+            linestyle_opts=opts.LineStyleOpts(opacity=0),
+        )
+        .set_global_opts(
+            tooltip_opts=opts.TooltipOpts(is_show=False),
+            yaxis_opts=opts.AxisOpts(
+                type_="value",
+                max_=y_max,
+                axistick_opts=opts.AxisTickOpts(is_show=False),
+                axislabel_opts=opts.LabelOpts(is_show=False),
+                splitline_opts=opts.SplitLineOpts(is_show=True),
+            ),
+            xaxis_opts=opts.AxisOpts(
+                type_="category",
+                boundary_gap=False,
+                interval=0),
+        )
+
+        .render_embed()
+    )
+
+    components.html(line_buffet, height=800)
