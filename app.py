@@ -8,6 +8,13 @@ from datetime import datetime
 import requests
 import bs4
 import json
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+from pandas.tseries.offsets import MonthEnd
+import plotly.express as px
+import plotly.graph_objects as go
 
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
@@ -79,5 +86,188 @@ with tab1:
     components.html(line, height=800)
 
 
+# Buffet Index
+
+
+def post_bs(url, payload):
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+    return bs4.BeautifulSoup(requests.post(url, headers=headers, data=payload).text, "lxml")
+
+# 주가지수 조회
+def idx_prc(mktType):
+ 
+    url = 'http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd'
+ 
+    end_dd = datetime.today().strftime("%Y%m%d")
+    strt_dd = (datetime.now() - relativedelta(years=15)).strftime("%Y%m%d")
+
+    if mktType == 'KOSPI':
+        param = ['코스피', '1']
+    elif mktType == 'KOSDAQ':
+        param = ['코스닥', '2']
+    else:
+        param = ['코스피', '1']
+ 
+    payload = {
+               'bld': 'dbms/MDC/STAT/standard/MDCSTAT00301',
+               'tboxindIdx_finder_equidx0_7': param[0],
+               'indIdx': param[1],
+               'indIdx2': '001',
+               'codeNmindIdx_finder_equidx0_7': param[0],
+               'param1indIdx_finder_equidx0_7':'',
+               'strtDd': strt_dd,
+               'endDd': end_dd,
+               'share': '2',
+               'money': '3',
+               'csvxls_isNo':'false'
+    }
+    MktData = post_bs(url, payload)
+    data = json.loads(MktData.text)
+ 
+    elevations = json.dumps(data['output'])
+    day_one = pd.read_json(elevations)
+    org_df = pd.DataFrame(day_one)
+ 
+    return org_df
+
+
+ecos_api_key = st.secrets["ecos_api_key"]
+
+ecos_url = 'http://ecos.bok.or.kr/api'
+
+now = datetime.now()
+currYQ = f'{now.year}Q{(now.month-1)//3+1}'
+
+url = f'{ecos_url}/StatisticSearch/{ecos_api_key}/json/kr/1/10000/200Y005/Q/2000Q1/{currYQ}/1400'
+
+ecos_result = get_bs(url)
+ecos_json = json.loads(ecos_result.text)
+
+df = pd.json_normalize(ecos_json['StatisticSearch']['row'])
+df = df[['TIME', 'DATA_VALUE']]
+df['TIME'] = df['TIME'].str.replace('Q', '')
+#display(df)
+df['TIME'] = pd.to_datetime(df['TIME'].str[:4] + (df['TIME'].str[4:].astype(int)*3).astype(str).str.zfill(2) + '01')
+df['TIME'] = df['TIME'].apply(lambda x: MonthEnd().rollforward(x))
+df['DATA_VALUE'] = df['DATA_VALUE'].astype('float64')
+df['AnnSum'] = df['DATA_VALUE'].rolling(4).sum() * 1000000000
+
+# interpolation
+df = df.set_index('TIME').resample('D').interpolate(method='cubic').reset_index()
+# datetime 형태 변경
+df['TIME'] = df['TIME'].dt.strftime('%Y-%m-%d')
+
+
+df_idx_KOSPI = idx_prc('KOSPI')
+df_idx_KOSPI['MKTCAP'] = df_idx_KOSPI['MKTCAP'].replace({',':''}, regex=True).astype(float)
+df_idx_KOSDAQ = idx_prc('KOSDAQ')
+df_idx_KOSDAQ['MKTCAP'] = df_idx_KOSDAQ['MKTCAP'].replace({',':''}, regex=True).astype(float)
+
+df_idx_prc = df_idx_KOSPI.merge(df_idx_KOSDAQ, how='left', left_on='TRD_DD', right_on='TRD_DD')
+df_idx_prc['MKTCAP'] = df_idx_prc['MKTCAP_x'] + df_idx_prc['MKTCAP_y']
+
+df_idx_prc['TRD_DD'] = pd.to_datetime(df_idx_prc['TRD_DD']).dt.strftime('%Y-%m-%d')
+df_idx = df_idx_prc[['TRD_DD', 'MKTCAP_x', 'MKTCAP', 'CLSPRC_IDX_x']].copy()
+df_idx.rename({'MKTCAP_x':'MKTCAP_KOSPI', 'CLSPRC_IDX_x':'CLSPRC_IDX'}, axis='columns', inplace=True)
+
+
+df_new = pd.merge(df_idx, df, how='left', left_on='TRD_DD', right_on='TIME')
+#display(df_new.dtypes)
+df_new['Ratio'] = df_new['MKTCAP'] / df_new['AnnSum']
+df_new['Ratio_KOSPI'] = df_new['MKTCAP_KOSPI'] / df_new['AnnSum']
+
+
+
+df_new['TRD_DD'] = pd.to_datetime(df_new['TRD_DD'], format="%Y-%m-%d")
+
+#df_new = df_new.set_index('TIME').resample('D').interpolate(method='cubic').reset_index()
+df_new = df_new.set_index('TRD_DD').resample('D').interpolate(method='cubic').reset_index()
+df_new['DATA_VALUE'] = df_new['DATA_VALUE'].interpolate(method='linear')
+df_new['AnnSum'] = df_new['AnnSum'].interpolate(method='linear')
+df_new['Ratio'] = df_new['MKTCAP'] / df_new['AnnSum']
+df_new['Ratio_KOSPI'] = df_new['MKTCAP_KOSPI'] / df_new['AnnSum']
+
+df_new['TRD_DD'] = df_new['TRD_DD'].dt.strftime('%Y-%m-%d')
+
+#df_new.to_excel('gdp.xlsx')
+
+
+'''
+1. 최초시점 비율을 기준으로 함
+2. 매년 1월 1일자 위치에 "최초시점 비율" * GDP(AnnSum) 입력
+2-1. 맨 처음 record 와 맨 마지막 record 에도 위의 수식 적용
+3. 연간 값은 linear interpolation 처리
+'''
+
+# 최초시점 비율
+#initRatio = df_new.loc[0, 'Ratio_KOSPI']
+initRatio = df_new['Ratio_KOSPI'].median()
+maxRatio = df_new['Ratio_KOSPI'].max()
+
+Ratio_max = min(df_new['Ratio_KOSPI'].max()*0.9, initRatio * 3)
+Ratio_min = max(df_new['Ratio_KOSPI'].min()*1.2, initRatio * 0.6)
+Ratio_high = (initRatio + Ratio_max) * 0.5
+Ratio_low = (initRatio + Ratio_min) * 0.5
+band = f'{initRatio:.0%} base'
+
+Ratio_max = 1.08
+Ratio_min = 0.58
+Ratio_high = 0.91
+Ratio_low = 0.75
+
+
+df_new['TRD_DD'] = pd.to_datetime(df_new['TRD_DD'])
+df_new[band] = np.where((df_new['TRD_DD'].dt.month == 1) & (df_new['TRD_DD'].dt.day == 1), initRatio * df_new['AnnSum'], np.nan)
+df_new.loc[0, band] = initRatio * df_new.loc[0, 'AnnSum']
+df_new[band] = df_new[band].interpolate(method='linear')
+
+bandMin = f'{Ratio_min:.0%} Modestly Undervalued'
+bandLow = f'{Ratio_low:.0%} Fair Valued'
+bandHigh = f'{Ratio_high:.0%} Modestly Overvalued'
+bandMax = f'{Ratio_max:.0%} Significantly Overvalued'
+
+df_new[bandMin] = df_new[band] * Ratio_min / initRatio
+df_new[bandLow] = df_new[band] * Ratio_low / initRatio
+df_new[bandHigh] = df_new[band] * Ratio_high / initRatio
+df_new[bandMax] = df_new[band] * Ratio_max / initRatio
+
+df_new = df_new.fillna(method='ffill')
+
+fig_KOSPI = px.line(df_new, x='TRD_DD', y=['MKTCAP_KOSPI'], custom_data=['Ratio_KOSPI', 'CLSPRC_IDX'], width=1200)
+
+fig_KOSPI.update_xaxes(showspikes=True, dtick="M12")
+fig_KOSPI.update_traces(hovertemplate="<br>".join(["%{customdata[0]:.2%}", "KOSPI Index: %{customdata[1]}"]), line_color='navy', line_width=1.5)
+
+opacity = 0.4
+
+#blue
+fig_KOSPI.add_traces(go.Scatter(x=df_new['TRD_DD'], y=df_new[bandMin],
+                            line = dict(color='rgba(0,0,0,0)'),
+                            fill='tonexty', 
+                            fillcolor=f'rgba(0, 255, 255, {opacity})'))
+#green
+fig_KOSPI.add_traces(go.Scatter(x=df_new['TRD_DD'], y=df_new[bandLow],
+                            line = dict(color='rgba(0,0,0,0)'),
+                            fill='tonexty', 
+                            fillcolor=f'rgba(0, 255, 0, {opacity})'))
+#yellow
+fig_KOSPI.add_traces(go.Scatter(x=df_new['TRD_DD'], y=df_new[bandHigh],
+                            line = dict(color='rgba(0,0,0,0)'),
+                            fill='tonexty', 
+                            fillcolor=f'rgba(255, 255, 0, {opacity})'))
+#orange
+fig_KOSPI.add_traces(go.Scatter(x=df_new['TRD_DD'], y=df_new[bandMax],
+                            line = dict(color='rgba(0,0,0,0)'),
+                            fill='tonexty',
+                            fillcolor=f'rgba(255, 165, 0, {opacity})'))
+#red
+fig_KOSPI.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=f"rgba(255, 0, 0, {opacity})")
+
+#fig_KOSPI.show()
+
+
+
 with tab2:
     st.subheader("Buffet Index")
+
+    st.plotly_chart(fig_KOSPI)
