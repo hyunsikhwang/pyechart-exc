@@ -231,11 +231,6 @@ df_new[bandMax] = df_new[band] * Ratio_max / initRatio
 
 df_new = df_new.fillna(method='ffill')
 
-fig_KOSPI = px.line(df_new, x='TRD_DD', y=['MKTCAP_KOSPI'], custom_data=['Ratio_KOSPI', 'CLSPRC_IDX'], width=1200)
-
-fig_KOSPI.update_xaxes(showspikes=True, dtick="M12")
-fig_KOSPI.update_traces(hovertemplate="<br>".join(["%{customdata[0]:.2%}", "KOSPI Index: %{customdata[1]}"]), line_color='navy', line_width=1.5)
-
 x_data = list(df_new['TRD_DD'].dt.strftime("%Y-%m-%d"))
 y_data = list(df_new['MKTCAP_KOSPI'])
 y_max = df_new['MKTCAP_KOSPI'].max()*1.1
