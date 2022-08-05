@@ -243,7 +243,7 @@ y_bandLimit = list(y_max-df_new[bandMax])
 
 
 with tab2:
-    st.subheader("Buffet Index")
+    st.subheader("Buffet Index for Korea Stock Market (KOSPI)")
 
     line_buffet = (
         Line(init_opts=opts.InitOpts(width="100%", height="800px"))
