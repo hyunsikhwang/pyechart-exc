@@ -13,8 +13,6 @@ import numpy as np
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from pandas.tseries.offsets import MonthEnd
-import plotly.express as px
-import plotly.graph_objects as go
 
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
@@ -253,7 +251,7 @@ with tab2:
     st.subheader("Buffet Index")
 
     line_buffet = (
-        Line()
+        Line(init_opts=opts.InitOpts(width="100%", height="800px"))
         .add_xaxis(xaxis_data=x_data)
         .add_yaxis(
             series_name="",
