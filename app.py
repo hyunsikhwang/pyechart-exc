@@ -254,6 +254,7 @@ with tab2:
             symbol="emptyCircle",
             is_symbol_show=False,
             label_opts=opts.LabelOpts(is_show=False),
+            is_smooth=True,
         )
         .add_yaxis(
             series_name="Significantly Undervalued",
