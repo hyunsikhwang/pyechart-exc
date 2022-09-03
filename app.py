@@ -242,6 +242,17 @@ y_bandHigh = list(df_new[bandHigh]-df_new[bandLow])
 y_bandMax = list(df_new[bandMax]-df_new[bandHigh])
 y_bandLimit = list(y_max-df_new[bandMax])
 
+if y_data[-1] >= Ratio_max:
+    y_status = 'Significantly Overvalued'
+elif y_data[-1] >= Ratio_high:
+    y_status = 'Modestly Overvalued'
+elif y_data[-1] >= Ratio_low:
+    y_status = 'Fair Valued'
+elif y_data[-1] >= Ratio_min:
+    y_status = 'Modestly Undervalued'
+else:
+    y_status = 'Significantly Undervalued'
+
 
 with tab2:
     st.subheader("Buffet Index for Korea Stock Market (KOSPI)")
@@ -257,7 +268,7 @@ with tab2:
             label_opts=opts.LabelOpts(is_show=False),
             is_smooth=True,
             markpoint_opts=opts.MarkPointOpts(
-                data=[opts.MarkPointItem(name="Current", type_=None, coord=[x_data[-1], y_data[-1]], value=f"{y_data_ratio[-1]:.1f}")]),
+                data=[opts.MarkPointItem(name="Current", type_=None, coord=[x_data[-1], y_data[-1]], value=f"{y_data_ratio[-1]:.2f}\n\n{y_status}")]),
         )
         .add_yaxis(
             series_name="Significantly Undervalued",
