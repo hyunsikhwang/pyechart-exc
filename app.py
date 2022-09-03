@@ -208,11 +208,11 @@ Ratio_high = (initRatio + Ratio_max) * 0.5
 Ratio_low = (initRatio + Ratio_min) * 0.5
 band = f'{initRatio:.0%} base'
 
+# Buffet Index Range
 Ratio_max = 1.08
 Ratio_min = 0.58
 Ratio_high = 0.91
 Ratio_low = 0.75
-
 
 df_new['TRD_DD'] = pd.to_datetime(df_new['TRD_DD'])
 df_new[band] = np.where((df_new['TRD_DD'].dt.month == 1) & (df_new['TRD_DD'].dt.day == 1), initRatio * df_new['AnnSum'], np.nan)
@@ -233,6 +233,7 @@ df_new = df_new.fillna(method='ffill')
 
 x_data = list(df_new['TRD_DD'].dt.strftime("%Y-%m-%d"))
 y_data = list(df_new['MKTCAP_KOSPI'])
+y_data_ratio = list(df_new['Ratio_KOSPI'])
 y_max = df_new['MKTCAP_KOSPI'].max()*1.1
 
 y_bandMin = list(df_new[bandMin])
@@ -256,7 +257,7 @@ with tab2:
             label_opts=opts.LabelOpts(is_show=False),
             is_smooth=True,
             markpoint_opts=opts.MarkPointOpts(
-                data=[opts.MarkPointItem(name="Current", type_=None, coord=[x_data[-1], y_data[-1]], value=f"{y_data[-1]:.1f}")]),
+                data=[opts.MarkPointItem(name="Current", type_=None, coord=[x_data[-1], y_data[-1]], value=f"{y_data_ratio[-1]:.1f}")]),
         )
         .add_yaxis(
             series_name="Significantly Undervalued",
