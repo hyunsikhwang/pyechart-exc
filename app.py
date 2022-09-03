@@ -255,6 +255,8 @@ with tab2:
             is_symbol_show=False,
             label_opts=opts.LabelOpts(is_show=False),
             is_smooth=True,
+            markpoint_opts=opts.MarkPointOpts(
+                data=[opts.MarkPointItem(name="Current", type_=None, coord=[x_data[-1], y_data[-1]], value=f"{y_data[-1]:.1f}")]),
         )
         .add_yaxis(
             series_name="Significantly Undervalued",
