@@ -97,7 +97,7 @@ def idx_prc(mktType):
     url = 'http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd'
  
     end_dd = datetime.today().strftime("%Y%m%d")
-    strt_dd = (datetime.now() - relativedelta(years=15)).strftime("%Y%m%d")
+    strt_dd = (datetime.now() - relativedelta(years=10)).strftime("%Y%m%d")
 
     if mktType == 'KOSPI':
         param = ['코스피', '1']
