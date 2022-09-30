@@ -281,7 +281,7 @@ with tab2:
             label_opts=opts.LabelOpts(is_show=False),
             is_smooth=True,
             markpoint_opts=opts.MarkPointOpts(
-                data=[opts.MarkPointItem(name="Current", type_=None, coord=[x_data[-1], y_data[-1]], value=f"{y_data_ratio[-1]:,.2%}\n\n{y_status}")]),
+                data=[opts.MarkPointItem(name="Current", type_=None, coord=[x_data[-1], y_data[-1]], value=f"{y_data_ratio[-1]:,.0%}\n\n{y_status}")]),
         )
         .add_yaxis(
             series_name="Significantly Undervalued",
