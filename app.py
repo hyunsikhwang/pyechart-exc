@@ -120,7 +120,11 @@ def idx_prc(mktType):
                'csvxls_isNo':'false'
     }
     MktData = post_bs(url, payload)
-    data = json.loads(MktData.text)
+
+    try:
+        data = json.loads(MktData.text)
+    except:
+        st.error(MktData.text)
  
     elevations = json.dumps(data['output'])
     day_one = pd.read_json(elevations)
