@@ -177,12 +177,11 @@ df_idx_KOSPI['MKTCAP'] = df_idx_KOSPI['MKTCAP'].replace({',':''}, regex=True).as
 # df_idx_prc = df_idx_KOSPI.merge(df_idx_KOSDAQ, how='left', left_on='TRD_DD', right_on='TRD_DD')
 # df_idx_prc['MKTCAP'] = df_idx_prc['MKTCAP_x'] + df_idx_prc['MKTCAP_y']
 
-# df_idx_prc['TRD_DD'] = pd.to_datetime(df_idx_prc['TRD_DD']).dt.strftime('%Y-%m-%d')
+df_idx_prc['TRD_DD'] = pd.to_datetime(df_idx_prc['TRD_DD']).dt.strftime('%Y-%m-%d')
 # df_idx = df_idx_prc[['TRD_DD', 'MKTCAP_x', 'MKTCAP', 'CLSPRC_IDX_x']].copy()
 # df_idx.rename({'MKTCAP_x':'MKTCAP_KOSPI', 'CLSPRC_IDX_x':'CLSPRC_IDX'}, axis='columns', inplace=True)
 
-
-df_new = pd.merge(df_idx, df, how='left', left_on='TRD_DD', right_on='TIME')
+df_new = pd.merge(df_idx_prc, df, how='left', left_on='TRD_DD', right_on='TIME')
 #display(df_new.dtypes)
 df_new['Ratio'] = df_new['MKTCAP'] / df_new['AnnSum']
 df_new['Ratio_KOSPI'] = df_new['MKTCAP_KOSPI'] / df_new['AnnSum']
