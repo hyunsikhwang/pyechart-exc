@@ -13,6 +13,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from pandas.tseries.offsets import MonthEnd
+from pymongo import MongoClient
 
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
@@ -134,6 +135,8 @@ def idx_prc(mktType):
 
 
 ecos_api_key = st.secrets["ecos_api_key"]
+mgdb_id = st.secrets["mgdb_id"]
+mgdb_pw = st.secrets["mgdb_pw"]
 
 ecos_url = 'http://ecos.bok.or.kr/api'
 
@@ -160,7 +163,13 @@ df = df.set_index('TIME').resample('D').interpolate(method='cubic').reset_index(
 df['TIME'] = df['TIME'].dt.strftime('%Y-%m-%d')
 
 
-df_idx_KOSPI = idx_prc('KOSPI')
+# df_idx_KOSPI = idx_prc('KOSPI')
+MONGO_DB = "cluster0"
+dataset = 'MV_KOSPI'
+connection = MongoClient(f'mongodb://{mgdb_id}:{mgdb_pw}@cluster0-shard-00-00-k5utu.mongodb.net:27017,cluster0-shard-00-01-k5utu.mongodb.net:27017,cluster0-shard-00-02-k5utu.mongodb.net:27017/test?ssl=true&replicaSet=Cluster0-shard-0&authSource=admin')
+collection = connection[MONGO_DB][dataset]
+df_idx_KOSPI = pd.DataFrame(list(collection.find()))[['TRD_DD', 'MKTCAP_KOSPI', 'MKTCAP', 'CLSPRC_IDX']]
+
 df_idx_KOSPI['MKTCAP'] = df_idx_KOSPI['MKTCAP'].replace({',':''}, regex=True).astype(float)
 df_idx_KOSDAQ = idx_prc('KOSDAQ')
 df_idx_KOSDAQ['MKTCAP'] = df_idx_KOSDAQ['MKTCAP'].replace({',':''}, regex=True).astype(float)
