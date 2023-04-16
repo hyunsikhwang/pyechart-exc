@@ -353,4 +353,4 @@ with tab2:
 
     components.html(line_buffet, height=800)
 
-    st.write(df_new)
+    st.write(df_new[(df_new['TRD_DD'].loc['2023-1-1':'2023-4-14'])])
