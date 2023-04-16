@@ -355,3 +355,4 @@ with tab2:
 
     st.write(df_new.dtypes)
     st.write(df_new[(df_new['TRD_DD']>='2023-01-01 00:00:00')])
+    st.write(pd.Timestamp(np.datetime64('2023-01-01')) + pd.DateOffset(months=1))
