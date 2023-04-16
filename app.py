@@ -212,70 +212,70 @@ df_new['TRD_DD'] = df_new['TRD_DD'].dt.strftime('%Y-%m-%d')
 
 # 최초시점 비율
 #initRatio = df_new.loc[0, 'Ratio_KOSPI']
-initRatio = df_new['Ratio_KOSPI'].median()
-maxRatio = df_new['Ratio_KOSPI'].max()
-
-Ratio_max = min(df_new['Ratio_KOSPI'].max()*0.9, initRatio * 3)
-Ratio_min = max(df_new['Ratio_KOSPI'].min()*1.2, initRatio * 0.6)
-Ratio_high = (initRatio + Ratio_max) * 0.5
-Ratio_low = (initRatio + Ratio_min) * 0.5
-band = f'{initRatio:.0%} base'
-
-# Buffet Index Range
-Ratio_max = 1.08
-Ratio_min = 0.58
-Ratio_high = 0.91
-Ratio_low = 0.75
-
-selPeriod = st.selectbox('Select Period', ['1Y', 'All'], index=1)
-
-df_new['TRD_DD'] = pd.to_datetime(df_new['TRD_DD'])
-df_new[band] = np.where((df_new['TRD_DD'].dt.month == 1) & (df_new['TRD_DD'].dt.day == 1), initRatio * df_new['AnnSum'], np.nan)
-df_new.loc[0, band] = initRatio * df_new.loc[0, 'AnnSum']
-df_new[band] = df_new[band].interpolate(method='linear')
-
-bandMin = f'{Ratio_min:.0%} Modestly Undervalued'
-bandLow = f'{Ratio_low:.0%} Fair Valued'
-bandHigh = f'{Ratio_high:.0%} Modestly Overvalued'
-bandMax = f'{Ratio_max:.0%} Significantly Overvalued'
-
-df_new[bandMin] = df_new[band] * Ratio_min / initRatio
-df_new[bandLow] = df_new[band] * Ratio_low / initRatio
-df_new[bandHigh] = df_new[band] * Ratio_high / initRatio
-df_new[bandMax] = df_new[band] * Ratio_max / initRatio
-
-df_new = df_new.fillna(method='ffill')
-
-if selPeriod == '1Y':
-    end_dd = datetime.today().strftime("%Y-%m-%d")
-    strt_dd = (datetime.now() - relativedelta(years=1)).strftime("%Y-%m-%d")
-    df_new = df_new[(df_new['TRD_DD'].between(strt_dd, end_dd))]
-
-
-x_data = list(df_new['TRD_DD'].dt.strftime("%Y-%m-%d"))
-y_data = list(df_new['MKTCAP_KOSPI'])
-y_data_ratio = list(df_new['Ratio_KOSPI'])
-y_max = df_new['MKTCAP_KOSPI'].max()*1.1
-
-y_bandMin = list(df_new[bandMin])
-y_bandLow = list(df_new[bandLow]-df_new[bandMin])
-y_bandHigh = list(df_new[bandHigh]-df_new[bandLow])
-y_bandMax = list(df_new[bandMax]-df_new[bandHigh])
-y_bandLimit = list(y_max-df_new[bandMax])
-
-if y_data_ratio[-1] >= Ratio_max:
-    y_status = 'Significantly Overvalued'
-elif y_data_ratio[-1] >= Ratio_high:
-    y_status = 'Modestly Overvalued'
-elif y_data_ratio[-1] >= Ratio_low:
-    y_status = 'Fair Valued'
-elif y_data_ratio[-1] >= Ratio_min:
-    y_status = 'Modestly Undervalued'
-else:
-    y_status = 'Significantly Undervalued'
-
 
 with tab2:
+    initRatio = df_new['Ratio_KOSPI'].median()
+    maxRatio = df_new['Ratio_KOSPI'].max()
+
+    Ratio_max = min(df_new['Ratio_KOSPI'].max()*0.9, initRatio * 3)
+    Ratio_min = max(df_new['Ratio_KOSPI'].min()*1.2, initRatio * 0.6)
+    Ratio_high = (initRatio + Ratio_max) * 0.5
+    Ratio_low = (initRatio + Ratio_min) * 0.5
+    band = f'{initRatio:.0%} base'
+
+    # Buffet Index Range
+    Ratio_max = 1.08
+    Ratio_min = 0.58
+    Ratio_high = 0.91
+    Ratio_low = 0.75
+
+    selPeriod = st.selectbox('Select Year', ['All', '1', '2', '3', '4', '5', '10'], index=0)
+
+    df_new['TRD_DD'] = pd.to_datetime(df_new['TRD_DD'])
+    df_new[band] = np.where((df_new['TRD_DD'].dt.month == 1) & (df_new['TRD_DD'].dt.day == 1), initRatio * df_new['AnnSum'], np.nan)
+    df_new.loc[0, band] = initRatio * df_new.loc[0, 'AnnSum']
+    df_new[band] = df_new[band].interpolate(method='linear')
+
+    bandMin = f'{Ratio_min:.0%} Modestly Undervalued'
+    bandLow = f'{Ratio_low:.0%} Fair Valued'
+    bandHigh = f'{Ratio_high:.0%} Modestly Overvalued'
+    bandMax = f'{Ratio_max:.0%} Significantly Overvalued'
+
+    df_new[bandMin] = df_new[band] * Ratio_min / initRatio
+    df_new[bandLow] = df_new[band] * Ratio_low / initRatio
+    df_new[bandHigh] = df_new[band] * Ratio_high / initRatio
+    df_new[bandMax] = df_new[band] * Ratio_max / initRatio
+
+    df_new = df_new.fillna(method='ffill')
+
+    if selPeriod != 'All':
+        end_dd = datetime.today().strftime("%Y-%m-%d")
+        strt_dd = (datetime.now() - relativedelta(years=int(selPeriod))).strftime("%Y-%m-%d")
+        df_new = df_new[(df_new['TRD_DD'].between(strt_dd, end_dd))]
+
+    x_data = list(df_new['TRD_DD'].dt.strftime("%Y-%m-%d"))
+    y_data = list(df_new['MKTCAP_KOSPI'])
+    y_data_ratio = list(df_new['Ratio_KOSPI'])
+    y_max = df_new['MKTCAP_KOSPI'].max()*1.1
+
+    y_bandMin = list(df_new[bandMin])
+    y_bandLow = list(df_new[bandLow]-df_new[bandMin])
+    y_bandHigh = list(df_new[bandHigh]-df_new[bandLow])
+    y_bandMax = list(df_new[bandMax]-df_new[bandHigh])
+    y_bandLimit = list(y_max-df_new[bandMax])
+
+    if y_data_ratio[-1] >= Ratio_max:
+        y_status = 'Significantly Overvalued'
+    elif y_data_ratio[-1] >= Ratio_high:
+        y_status = 'Modestly Overvalued'
+    elif y_data_ratio[-1] >= Ratio_low:
+        y_status = 'Fair Valued'
+    elif y_data_ratio[-1] >= Ratio_min:
+        y_status = 'Modestly Undervalued'
+    else:
+        y_status = 'Significantly Undervalued'
+
+
     st.subheader("Buffet Index for Korea Stock Market (KOSPI)")
 
     line_buffet = (
