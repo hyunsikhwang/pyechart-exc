@@ -227,11 +227,9 @@ Ratio_min = 0.58
 Ratio_high = 0.91
 Ratio_low = 0.75
 
-df_tmp = df_new[(df_new['TRD_DD'].between('2023-01-01', '2023-04-16'))]
-end_dd = datetime.today().strftime("%Y%m%d")
-strt_dd = (datetime.now() - relativedelta(years=10)).strftime("%Y%m%d")
-st.write(end_dd)
-st.write(strt_dd)
+end_dd = datetime.today().strftime("%Y-%m-%d")
+strt_dd = (datetime.now() - relativedelta(years=1)).strftime("%Y-%m-%d")
+df_tmp = df_new[(df_new['TRD_DD'].between(strt_dd, end_dd))]
 
 df_new['TRD_DD'] = pd.to_datetime(df_new['TRD_DD'])
 df_new[band] = np.where((df_new['TRD_DD'].dt.month == 1) & (df_new['TRD_DD'].dt.day == 1), initRatio * df_new['AnnSum'], np.nan)
