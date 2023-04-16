@@ -229,7 +229,7 @@ with tab2:
     Ratio_high = 0.91
     Ratio_low = 0.75
 
-    selPeriod = st.selectbox('Select Year', ['All', '1', '2', '3', '4', '5', '10'], index=0)
+    selPeriod = st.selectbox('Select Year', ['All', '1', '2', '3', '4', '5', '10'], index=5)
 
     df_new['TRD_DD'] = pd.to_datetime(df_new['TRD_DD'])
     df_new[band] = np.where((df_new['TRD_DD'].dt.month == 1) & (df_new['TRD_DD'].dt.day == 1), initRatio * df_new['AnnSum'], np.nan)
