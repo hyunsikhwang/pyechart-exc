@@ -227,6 +227,8 @@ Ratio_min = 0.58
 Ratio_high = 0.91
 Ratio_low = 0.75
 
+df_tmp = df_new[(df_new['TRD_DD'].loc['2023-1-1':'2023-4-16'])]
+
 df_new['TRD_DD'] = pd.to_datetime(df_new['TRD_DD'])
 df_new[band] = np.where((df_new['TRD_DD'].dt.month == 1) & (df_new['TRD_DD'].dt.day == 1), initRatio * df_new['AnnSum'], np.nan)
 df_new.loc[0, band] = initRatio * df_new.loc[0, 'AnnSum']
@@ -353,6 +355,4 @@ with tab2:
 
     components.html(line_buffet, height=800)
 
-    st.write(df_new.dtypes)
-    st.write(df_new[(df_new['TRD_DD']>='2023-01-01 00:00:00')])
-    st.write(pd.Timestamp(np.datetime64('2023-01-01')) + pd.DateOffset(months=1))
+    st.write(df_tmp)
