@@ -227,7 +227,7 @@ Ratio_min = 0.58
 Ratio_high = 0.91
 Ratio_low = 0.75
 
-selPeriod = st.selectbox('Select Period', ['1Y', 'All'])
+selPeriod = st.selectbox('Select Period', ['1Y', 'All'], index=1)
 
 if selPeriod == '1Y':
     end_dd = datetime.today().strftime("%Y-%m-%d")
