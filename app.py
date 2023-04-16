@@ -229,11 +229,6 @@ Ratio_low = 0.75
 
 selPeriod = st.selectbox('Select Period', ['1Y', 'All'], index=1)
 
-if selPeriod == '1Y':
-    end_dd = datetime.today().strftime("%Y-%m-%d")
-    strt_dd = (datetime.now() - relativedelta(years=1)).strftime("%Y-%m-%d")
-    df_new = df_new[(df_new['TRD_DD'].between(strt_dd, end_dd))]
-
 df_new['TRD_DD'] = pd.to_datetime(df_new['TRD_DD'])
 df_new[band] = np.where((df_new['TRD_DD'].dt.month == 1) & (df_new['TRD_DD'].dt.day == 1), initRatio * df_new['AnnSum'], np.nan)
 df_new.loc[0, band] = initRatio * df_new.loc[0, 'AnnSum']
@@ -250,6 +245,12 @@ df_new[bandHigh] = df_new[band] * Ratio_high / initRatio
 df_new[bandMax] = df_new[band] * Ratio_max / initRatio
 
 df_new = df_new.fillna(method='ffill')
+
+if selPeriod == '1Y':
+    end_dd = datetime.today().strftime("%Y-%m-%d")
+    strt_dd = (datetime.now() - relativedelta(years=1)).strftime("%Y-%m-%d")
+    df_new = df_new[(df_new['TRD_DD'].between(strt_dd, end_dd))]
+
 
 x_data = list(df_new['TRD_DD'].dt.strftime("%Y-%m-%d"))
 y_data = list(df_new['MKTCAP_KOSPI'])
