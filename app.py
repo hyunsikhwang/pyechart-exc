@@ -360,4 +360,3 @@ with tab2:
 
     components.html(line_buffet, height=800)
 
-    st.write(df_tmp)
