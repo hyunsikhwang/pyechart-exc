@@ -354,4 +354,4 @@ with tab2:
     components.html(line_buffet, height=800)
 
     st.write(df_new.dtypes)
-    st.write(df_new)
+    st.write(df_new[(df_new['TRD_DD']>='2023-01-01 00:00:00')])
