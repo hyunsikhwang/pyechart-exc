@@ -353,4 +353,4 @@ with tab2:
 
     components.html(line_buffet, height=800)
 
-    st.write(dtype(df_new))
+    st.write(df_new.dtypes)
