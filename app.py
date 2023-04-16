@@ -229,7 +229,7 @@ Ratio_low = 0.75
 
 selPeriod = st.selectbox('Select Period', ['1Y', 'All'])
 
-if selPeriod = '1Y':
+if selPeriod == '1Y':
     end_dd = datetime.today().strftime("%Y-%m-%d")
     strt_dd = (datetime.now() - relativedelta(years=1)).strftime("%Y-%m-%d")
     df_new = df_new[(df_new['TRD_DD'].between(strt_dd, end_dd))]
