@@ -192,7 +192,7 @@ df_new['Ratio_KOSPI'] = df_new['MKTCAP_KOSPI'] / df_new['AnnSum']
 df_new['TRD_DD'] = pd.to_datetime(df_new['TRD_DD'], format="%Y-%m-%d")
 
 #df_new = df_new.set_index('TIME').resample('D').interpolate(method='cubic').reset_index()
-st.write(df_new)
+# st.write(df_new)
 df_new = df_new.drop_duplicates(['TRD_DD'])
 df_new = df_new.set_index('TRD_DD').resample('D').interpolate(method='cubic').reset_index()
 df_new['DATA_VALUE'] = df_new['DATA_VALUE'].interpolate(method='linear')
