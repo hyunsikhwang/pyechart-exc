@@ -4,7 +4,6 @@ import streamlit as st
 from pyecharts.charts import Line
 from pyecharts.commons.utils import JsCode
 import streamlit.components.v1 as components
-from datetime import datetime
 import requests
 import bs4
 import json
@@ -14,6 +13,9 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from pandas.tseries.offsets import MonthEnd
 from pymongo import MongoClient
+from pykrx import stock
+from datetime import datetime, timedelta
+from pytz import timezone, utc
 
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
@@ -365,3 +367,15 @@ with tab2:
 
 with tab3:
     st.subheader("Dashboard")
+
+    KST = timezone('Asia/Seoul')
+    now = datetime.utcnow()
+
+    SeoulTime = utc.localize(now).astimezone(KST).strftime('%Y%m%d')
+    SeoulTime_b7d = (utc.localize(now).astimezone(KST) - timedelta(days=7)).strftime('%Y%m%d')
+
+    df_KS = stock.get_index_price_change(f"{SeoulTime[:4]}0101", SeoulTime, "KOSPI").reset_index()
+    df_KQ = stock.get_index_price_change(f"{SeoulTime[:4]}0101", SeoulTime, "KOSDAQ").reset_index()
+
+    st.write(df_KS)
+    st.write(df_KQ)
