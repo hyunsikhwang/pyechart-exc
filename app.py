@@ -377,5 +377,6 @@ with tab3:
     df_KS = stock.get_index_price_change(f"{SeoulTime[:4]}0101", SeoulTime, "KOSPI").reset_index()
     df_KQ = stock.get_index_price_change(f"{SeoulTime[:4]}0101", SeoulTime, "KOSDAQ").reset_index()
 
-    st.write(df_KS)
-    st.write(df_KQ)
+    df_KR = pd.concat([df_KS[(df_KS['지수명'].isin(['코스피', '코스피 200']))], df_KQ[(df_KQ['지수명'].isin(['코스닥', '코스닥 150']))]]).reset_index(drop=True)[['지수명', '시가', '종가', '등락률']]
+
+    st.write(df_KR)
