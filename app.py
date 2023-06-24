@@ -28,7 +28,7 @@ def get_bs(url):
     return bs4.BeautifulSoup(requests.get(url, headers=headers).text, "lxml")
 
 
-tab1, tab2 = st.tabs(["Fear and Greed Index", "Buffet Index"])
+tab1, tab2, tab3 = st.tabs(["Fear and Greed Index", "Buffet Index"])
 
 with tab1:
     response = get_bs(url)
@@ -363,3 +363,5 @@ with tab2:
 
     components.html(line_buffet, height=800)
 
+with tab3:
+    st.subheader("Dashboard")
