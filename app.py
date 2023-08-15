@@ -548,7 +548,7 @@ def all_val(end_dd):
  
     return df_result
 
-def TreeMap():
+def TreeMap(mktType):
     dict_Metric = {'Price':['FLUC_RT', 0],
                 'PER':['PER', 1],
                 'PBR':['PBR', 2],
@@ -567,7 +567,8 @@ def TreeMap():
     df_KRX_12025 = KRX_12025(max_work_dt)
     # 숫자값이 없는 것으로 확인되면 re-try 하는 부분 보완
     mktTypes = ['KOSPI', 'KOSDAQ', 'ALL']
-    mktType = mktTypes[0]
+    # mktType = mktTypes[0]
+
     if mktType!='ALL':
         df_KRX_12025 = df_KRX_12025[(df_KRX_12025['MKT_TP_NM']==mktType)]
 
@@ -675,6 +676,9 @@ def TreeMap():
 with tab4:
     st.subheader("Treemap for Korean Stock Market")
 
-    fig_4 = TreeMap()    
+    treemap_market = st.radio(label = 'Market', options = ['KOSPI', 'KOSDAQ', 'ALL'], index=0)
+    st.write('<style>div.row-widget.stRadio> div{flex-direction:row;}</style>', unsafe_allow_html=True)
+    fig_4 = TreeMap(treemap_market)
 
     st.plotly_chart(fig_4)
+
