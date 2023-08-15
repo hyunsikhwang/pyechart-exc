@@ -16,6 +16,7 @@ from pymongo import MongoClient
 from pykrx import stock
 from datetime import datetime, timedelta
 from pytz import timezone, utc
+import plotly.express as px
 
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
@@ -30,7 +31,7 @@ def get_bs(url):
     return bs4.BeautifulSoup(requests.get(url, headers=headers).text, "lxml")
 
 
-tab1, tab2, tab3 = st.tabs(["Fear and Greed Index", "Buffet Index", "Dashboard"])
+tab1, tab2, tab3, tab4 = st.tabs(["Fear and Greed Index", "Buffet Index(Korea)", "Dashboard, Treemap(Korea)"])
 
 with tab1:
     response = get_bs(url)
@@ -380,3 +381,286 @@ with tab3:
     df_KR = pd.concat([df_KS[(df_KS['지수명'].isin(['코스피', '코스피 200']))], df_KQ[(df_KQ['지수명'].isin(['코스닥', '코스닥 150']))]]).reset_index(drop=True)[['지수명', '시가', '종가', '등락률']]
 
     st.write(df_KR)
+
+def maxworkdt_command():
+ 
+    url = 'http://data.krx.co.kr/comm/bldAttendant/executeForResourceBundle.cmd'
+    params = {'baseName': 'krx.mdc.i18n.component',
+              'key': 'B128.bld',
+              'menuId': 'MDC0201030108'}
+
+    MktData = get_bs(url, params=params)
+
+    data = json.loads(MktData.text)
+    
+    df_result = data['result']['output'][0]['max_work_dt']
+ 
+    return df_result
+
+# 전종목 등락률
+def KRX_12002(schdate, period):
+    df_result = pd.DataFrame()
+ 
+    url = 'http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd'
+
+    # 1일
+    # 1주
+    # 1개월
+    # 1분기
+    # 6개월
+    # 1년
+    # 3년
+    # 5년
+
+    f = '%Y%m%d'
+
+    period = period.upper()
+    print(period)
+
+    if period == 'D':
+        strtDd = (datetime.strptime(schdate, f)).strftime(f)
+    elif period == 'W':
+        strtDd = (datetime.strptime(schdate, f) - timedelta(weeks=1) + timedelta(days=1)).strftime(f)
+    elif period == 'M':
+        strtDd = (datetime.strptime(schdate, f) - relativedelta(months=1) + timedelta(days=1)).strftime(f)
+    elif period == 'Q':
+        strtDd = (datetime.strptime(schdate, f) - relativedelta(months=3) + timedelta(days=1)).strftime(f)
+    elif period == 'HY':    
+        strtDd = (datetime.strptime(schdate, f) - relativedelta(months=6) + timedelta(days=1)).strftime(f)
+    elif period == '1Y' or period == 'Y':
+        strtDd = (datetime.strptime(schdate, f) - relativedelta(years=1) + timedelta(days=1)).strftime(f)
+    elif period == '3Y':
+        strtDd = (datetime.strptime(schdate, f) - relativedelta(years=3) + timedelta(days=1)).strftime(f)
+    else:
+        strtDd = (datetime.strptime(schdate, f)).strftime(f)
+    print(strtDd, schdate)
+ 
+    payload = {'bld': 'dbms/MDC/STAT/standard/MDCSTAT01602',
+               'mktId': 'ALL',
+               'strtDd': strtDd,
+               'endDd': schdate,
+               'adjStkPrc_check': 'Y',
+               'adjStkPrc': '2',
+               'share': '1',
+               'money': '1',
+               'csvxls_isNo': 'false'
+    }
+    MktData = post_bs(url, payload)
+
+    data = json.loads(MktData.text)
+    #display(pd.DataFrame(data['block1']))
+
+    df_result = pd.DataFrame(data['OutBlock_1'])
+
+    while df_result.BAS_PRC.str.replace(',', '').replace('-', '0').astype(float).sum() == 0:
+        strtDd = (datetime.strptime(strtDd, f) - timedelta(days=1)).strftime(f)
+        print(strtDd, schdate)
+        payload = {'bld': 'dbms/MDC/STAT/standard/MDCSTAT01602',
+                'mktId': 'ALL',
+                'strtDd': strtDd,
+                'endDd': schdate,
+                'adjStkPrc_check': 'Y',
+                'adjStkPrc': '2',
+                'share': '1',
+                'money': '1',
+                'csvxls_isNo': 'false'
+        }
+        MktData = post_bs(url, payload)
+
+
+        data = json.loads(MktData.text)
+        #display(pd.DataFrame(data['block1']))
+
+        df_result = pd.DataFrame(data['OutBlock_1'])
+ 
+    return df_result, strtDd
+
+
+# 업종분류현황
+def KRX_12025(schdate):
+    df_result = pd.DataFrame()
+ 
+    url = 'http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd'
+
+    mktIds = ['STK', 'KSQ']
+
+    df_result = pd.DataFrame()
+
+    for mktId in mktIds:
+ 
+        payload = {'bld': 'dbms/MDC/STAT/standard/MDCSTAT03901',
+                    'mktId': mktId,
+                    'trdDd': schdate,
+                    'money': '1',
+                    'csvxls_isNo': 'false'
+        }
+        MktData = post_bs(url, payload)
+
+        data = json.loads(MktData.text)
+        #display(pd.DataFrame(data['block1']))
+
+        df = pd.DataFrame(data['block1'])
+
+        df_result = pd.concat([df_result, df])
+ 
+    return df_result    
+
+# 전종목 Valuation 조회
+def all_val(end_dd):
+
+    url = 'http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd'
+ 
+    strt_dd = (datetime.now() - relativedelta(days=10)).strftime("%Y%m%d")
+
+    payload = {'bld':'dbms/MDC/STAT/standard/MDCSTAT03501',
+               'searchType':'1',
+               'mktId': 'ALL',
+               'trdDd': end_dd,
+               'tboxisuCd_finder_stkisu0_0': '005930%2F%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90',
+               'isuCd': 'KR7005930003',
+               'isuCd2': 'KR7005930003',
+               'codeNmisuCd_finder_stkisu0_0': '%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90',
+               'param1isuCd_finder_stkisu0_0': 'STK',
+               'strtDd': strt_dd,
+               'endDd': end_dd,
+               'csvxls_isNo': 'false',
+              }
+ 
+    MktData = post_bs(url, payload)
+ 
+    data = json.loads(MktData.text)
+    #display(data['output'])
+    df_result = pd.DataFrame(data['output'])
+ 
+    return df_result
+
+def TreeMap():
+    dict_Metric = {'Price':['FLUC_RT', 0],
+                'PER':['PER', 1],
+                'PBR':['PBR', 2],
+                'Dividend':['DVD_YLD', 3],
+                'ROE':['ROE', 4]}
+
+    max_work_dt = maxworkdt_command()
+
+    # 전종목 등락률 먼저 읽음
+    selPeriods = ['Day', 'Week', 'Month', 'Quarter', 'Year']
+    selPeriod = selPeriods[0]
+    df_KRX_12002, strtDd = KRX_12002(max_work_dt, selPeriod)
+    #display(df_KRX_12002)
+
+    # 업종분류현황 그 다음 읽음
+    df_KRX_12025 = KRX_12025(max_work_dt)
+    # 숫자값이 없는 것으로 확인되면 re-try 하는 부분 보완
+    mktTypes = ['KOSPI', 'KOSDAQ', 'ALL']
+    mktType = mktTypes[0]
+    if mktType!='ALL':
+        df_KRX_12025 = df_KRX_12025[(df_KRX_12025['MKT_TP_NM']==mktType)]
+
+    # 두 개의 dataframe merge 처리
+    df_KRX_12025 = pd.merge(df_KRX_12002, df_KRX_12025, how='inner', on='ISU_SRT_CD', suffixes=('_y', ''))
+
+
+    # remove comma and change data type for MKKCAP and FLUC_RT column
+    df_KRX_12025['MKTCAP'] = df_KRX_12025['MKTCAP'].str.replace('-', '0')
+    df_KRX_12025['MKTCAP'] = df_KRX_12025['MKTCAP'].str.replace(',', '').astype(float)
+    df_KRX_12025['FLUC_RT'] = df_KRX_12025['FLUC_RT_y'].str.replace(',', '')
+    df_KRX_12025['FLUC_RT'] = np.where(df_KRX_12025['FLUC_RT']=='-', '', df_KRX_12025['FLUC_RT'])
+    df_KRX_12025['FLUC_RT'] = df_KRX_12025['FLUC_RT'].str.strip()
+    df_KRX_12025 = df_KRX_12025[(df_KRX_12025['FLUC_RT'] != '')]
+    df_KRX_12025['FLUC_RT'] = df_KRX_12025['FLUC_RT'].astype(float)
+
+    #df_KRX_12025['FLUC_RT_DAY'] = ((1 + df_KRX_12025['FLUC_RT']/100)**(1/dayBtn) - 1) * 100
+    df_KRX_12025['FLUC_RT_DAY'] = ((df_KRX_12025['FLUC_RT'] - df_KRX_12025['FLUC_RT'].min()) / (df_KRX_12025['FLUC_RT'].max() - df_KRX_12025['FLUC_RT'].min()) * 25)
+    df_KRX_12025['FLUC_RT_sig'] = 1 / (1 + np.exp(-df_KRX_12025['FLUC_RT']))
+
+
+    # FLUC_AMT: 시총 기준 종목별 변동금액
+    df_KRX_12025['FLUC_AMT'] = df_KRX_12025['MKTCAP'] * df_KRX_12025['FLUC_RT'] / 100
+    # IND_FLUC_AMT: 업종별 변동금액
+    df_KRX_12025['IND_FLUC_AMT'] = df_KRX_12025.groupby('IDX_IND_NM')['FLUC_AMT'].transform('sum')
+    # IND_MKTCAP: 업종 시가총액
+    df_KRX_12025['IND_MKTCAP'] = df_KRX_12025.groupby('IDX_IND_NM')['MKTCAP'].transform('sum')
+    # UP_DN: 상승/하락 구분표기
+    df_KRX_12025['UP_DN'] = np.where(df_KRX_12025['IND_FLUC_AMT']>=0, 'Up', 'Down')
+    # IND_FLUC_RT: 업종 등락률
+    df_KRX_12025['IND_FLUC_RT'] = df_KRX_12025['IND_FLUC_AMT'] / df_KRX_12025['IND_MKTCAP'] * 100
+
+    # MKT_FLUC_AMT: 상승/하락별 변동금액
+    df_KRX_12025['MKT_FLUC_AMT'] = df_KRX_12025.groupby('UP_DN')['FLUC_AMT'].transform('sum')
+    # MKT_MKTCAP: 상승/하락별 시가총액
+    df_KRX_12025['MKT_MKTCAP'] = df_KRX_12025.groupby('UP_DN')['MKTCAP'].transform('sum')
+    # MKT_FLUC_RT: 상승/하락별 등락률
+    df_KRX_12025['MKT_FLUC_RT'] = df_KRX_12025['MKT_FLUC_AMT'] / df_KRX_12025['MKT_MKTCAP'] * 100
+
+    df_KRX_12025 = df_KRX_12025.replace(np.nan, '', regex=True)
+
+
+    # 전종목 valuation
+    df_KRX_all_val = all_val(max_work_dt)
+    df_KRX_12025 = pd.merge(df_KRX_12025, df_KRX_all_val, how='left', on='ISU_SRT_CD', suffixes=('', '_z'))
+
+    df_KRX_12025['PER'] = df_KRX_12025['PER'].str.replace('-', '0')
+    df_KRX_12025['PER'] = df_KRX_12025['PER'].str.replace(',', '').astype(float)
+    df_KRX_12025['PER'] = df_KRX_12025['PER'].astype(float)
+    df_KRX_12025['PBR'] = df_KRX_12025['PBR'].str.replace('-', '0')
+    df_KRX_12025['PBR'] = df_KRX_12025['PBR'].str.replace(',', '').astype(float)
+    df_KRX_12025['PBR'] = df_KRX_12025['PBR'].astype(float)
+    df_KRX_12025['DVD_YLD'] = df_KRX_12025['DVD_YLD'].astype(float)
+    df_KRX_12025['ROE'] = df_KRX_12025['PBR'] / df_KRX_12025['PER'] * 100
+    df_KRX_12025['ROE'] = df_KRX_12025['ROE'].fillna(0)
+
+    custom_color_scale = ['blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'white', 'red', 'red', 'red', 'red', 'red', 'red', 'red']
+    custom_color_scale = ['#30CC5A', '#2F9E4F', '#35764E', '#414554', '#8B444E', '#BF4045', '#F63538'] 
+
+    selMetrics = ['Price', 'PER', 'PBR', 'Dividend', 'ROE']
+    selMetric = selMetrics[0]
+    color_range = {'Price':{"Day":[-3, 3], "Week":[-6, 6], "Month":[-10, 10], "Quarter":[-18, 18], "Year":[-30, 30]},
+                'PER':{"Day":[0, 30], "Week":[0, 30], "Month":[0, 30], "Quarter":[0, 30], "Year":[0, 30]},
+                'PBR':{"Day":[0, 5], "Week":[0, 5], "Month":[0, 5], "Quarter":[0, 5], "Year":[0, 5]},
+                'Dividend':{"Day":[0, 5], "Week":[0, 5], "Month":[0, 5], "Quarter":[0, 5], "Year":[0, 5]},
+                'ROE':{"Day":[0, 30], "Week":[0, 30], "Month":[0, 30], "Quarter":[0, 30], "Year":[0, 30]},
+                }
+
+    fig = px.treemap(df_KRX_12025, path=['MKT_TP_NM', 'IDX_IND_NM', 'ISU_ABBRV'], values='MKTCAP',
+                    maxdepth=5,
+                    hover_data=['FLUC_RT', 'FLUC_AMT', 'IND_FLUC_RT', 'PER', 'PBR', 'DVD_YLD', 'ROE'],
+                    color=dict_Metric[selMetric][0],
+                    #color='IND_FLUC_RT',
+                    #color_continuous_scale='Turbo',
+                    color_continuous_scale= custom_color_scale,
+                    #range_color=[-3, 3],
+                    range_color=color_range[selMetric][selPeriod],
+                    #color_continuous_midpoint=0,
+                    width=1200,
+                    height=700,
+                    custom_data=['IND_FLUC_RT', 'FLUC_RT', 'ISU_ABBRV', 'ISU_SRT_CD', 'MKT_TP_NM', 'MKT_FLUC_RT', 'PER', 'PBR', 'DVD_YLD', 'ROE'],
+                    )
+
+    fig.data[0].customdata = np.column_stack([df_KRX_12025['FLUC_RT'].tolist(), df_KRX_12025['PER'].tolist(), df_KRX_12025['PBR'].tolist(), df_KRX_12025['DVD_YLD'].tolist(), df_KRX_12025['ROE'].tolist()])
+
+    if selMetric in ['Price', 'Dividend', 'ROE']:
+        fig.data[0].texttemplate = "%{label}<br>%{customdata["+str(dict_Metric[selMetric][1])+"]:.2f}%"
+    else:
+        fig.data[0].texttemplate = "%{label}<br>%{customdata["+str(dict_Metric[selMetric][1])+"]:.1f}"
+
+
+    fig.update_traces(hovertemplate=None, hoverinfo='skip', textfont_size=14)
+    fig.update_traces(hovertemplate='PER %{customdata[1]:.1f}<br>PBR %{customdata[2]:.1f}<br>Dividend %{customdata[3]:.1f}%<br>ROE %{customdata[4]:.1f}%', textfont_size=14)
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=20, b=20),
+        paper_bgcolor="LightSteelBlue",
+        autosize=False,
+        width=1000,
+        height=700,
+    )
+
+    return fig
+
+
+with tab4:
+    st.subheader("Treemap for Korean Stock Market")
+
+    fig_4 = TreeMap()    
+
+    st.plotly(fig_4)

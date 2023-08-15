@@ -7,3 +7,4 @@ scipy
 pymongo
 pykrx
 pytz
+plotly
