@@ -31,7 +31,7 @@ def get_bs(url):
     return bs4.BeautifulSoup(requests.get(url, headers=headers).text, "lxml")
 
 
-tab1, tab2, tab3, tab4 = st.tabs(["Fear and Greed Index", "Buffet Index(Korea)", "Dashboard, Treemap(Korea)"])
+tab1, tab2, tab3, tab4 = st.tabs(["Fear and Greed Index", "Buffet Index(Korea)", "Dashboard", "Treemap(Korea)"])
 
 with tab1:
     response = get_bs(url)
