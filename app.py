@@ -677,4 +677,4 @@ with tab4:
 
     fig_4 = TreeMap()    
 
-    st.plotly(fig_4)
+    st.plotly_chart(fig_4)
