@@ -683,17 +683,8 @@ with tab4:
     treemap_market = st.radio(label = 'Market', options = ['KOSPI', 'KOSDAQ', 'ALL'], index=0)
     st.write('<style>div.row-widget.stRadio> div{flex-direction:row;}</style>', unsafe_allow_html=True)
 
-    st.markdown(
-    f'''
-        <style>
-            .stSlider {{
-                width: 400px;
-            }}
-        </style>
-    ''',
-    unsafe_allow_html=True
-    )
-    treemap_switch = st.select_slider("Style", ["Simple", "Normal"]) 
+    ct = st.container()
+    treemap_switch = ct.select_slider("Style", ["Simple", "Normal"]) 
 
     fig_4 = TreeMap(treemap_market)
 
