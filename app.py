@@ -681,17 +681,10 @@ with tab4:
     st.subheader("Treemap for Korean Stock Market")
     
     treemap_market = st.radio(label = 'Market', options = ['KOSPI', 'KOSDAQ', 'ALL'], index=0)
-    treemap_switch = tog.st_toggle_switch(label="Label", 
-                                          key="Key1", 
-                                          default_value=False, 
-                                          label_after = False, 
-                                          inactive_color = '#D3D3D3', 
-                                          active_color="#11567f", 
-                                          track_color="#29B5E8"
-                                          )
-
+    treemap_switch = st.select_slider("Style", ["Simple", "Normal"]) 
+    
     st.write('<style>div.row-widget.stRadio> div{flex-direction:row;}</style>', unsafe_allow_html=True)
     fig_4 = TreeMap(treemap_market)
 
-    st.plotly_chart(fig_4)
+    st.plotly_chart(fig_4, use_container_width=True)
 
