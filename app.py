@@ -17,6 +17,7 @@ from pykrx import stock
 from datetime import datetime, timedelta
 from pytz import timezone, utc
 import plotly.express as px
+import  streamlit_toggle as tog
 
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
@@ -612,18 +613,18 @@ def TreeMap(mktType):
 
 
     # 전종목 valuation
-    df_KRX_all_val = all_val(max_work_dt)
-    df_KRX_12025 = pd.merge(df_KRX_12025, df_KRX_all_val, how='left', on='ISU_SRT_CD', suffixes=('', '_z'))
+    # df_KRX_all_val = all_val(max_work_dt)
+    # df_KRX_12025 = pd.merge(df_KRX_12025, df_KRX_all_val, how='left', on='ISU_SRT_CD', suffixes=('', '_z'))
 
-    df_KRX_12025['PER'] = df_KRX_12025['PER'].str.replace('-', '0')
-    df_KRX_12025['PER'] = df_KRX_12025['PER'].str.replace(',', '').astype(float)
-    df_KRX_12025['PER'] = df_KRX_12025['PER'].astype(float)
-    df_KRX_12025['PBR'] = df_KRX_12025['PBR'].str.replace('-', '0')
-    df_KRX_12025['PBR'] = df_KRX_12025['PBR'].str.replace(',', '').astype(float)
-    df_KRX_12025['PBR'] = df_KRX_12025['PBR'].astype(float)
-    df_KRX_12025['DVD_YLD'] = df_KRX_12025['DVD_YLD'].astype(float)
-    df_KRX_12025['ROE'] = df_KRX_12025['PBR'] / df_KRX_12025['PER'] * 100
-    df_KRX_12025['ROE'] = df_KRX_12025['ROE'].fillna(0)
+    # df_KRX_12025['PER'] = df_KRX_12025['PER'].str.replace('-', '0')
+    # df_KRX_12025['PER'] = df_KRX_12025['PER'].str.replace(',', '').astype(float)
+    # df_KRX_12025['PER'] = df_KRX_12025['PER'].astype(float)
+    # df_KRX_12025['PBR'] = df_KRX_12025['PBR'].str.replace('-', '0')
+    # df_KRX_12025['PBR'] = df_KRX_12025['PBR'].str.replace(',', '').astype(float)
+    # df_KRX_12025['PBR'] = df_KRX_12025['PBR'].astype(float)
+    # df_KRX_12025['DVD_YLD'] = df_KRX_12025['DVD_YLD'].astype(float)
+    # df_KRX_12025['ROE'] = df_KRX_12025['PBR'] / df_KRX_12025['PER'] * 100
+    # df_KRX_12025['ROE'] = df_KRX_12025['ROE'].fillna(0)
 
     custom_color_scale = ['blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'white', 'red', 'red', 'red', 'red', 'red', 'red', 'red']
     custom_color_scale = ['#30CC5A', '#2F9E4F', '#35764E', '#414554', '#8B444E', '#BF4045', '#F63538'] 
@@ -639,7 +640,8 @@ def TreeMap(mktType):
 
     fig = px.treemap(df_KRX_12025, path=['MKT_TP_NM', 'IDX_IND_NM', 'ISU_ABBRV'], values='MKTCAP',
                     maxdepth=5,
-                    hover_data=['FLUC_RT', 'FLUC_AMT', 'IND_FLUC_RT', 'PER', 'PBR', 'DVD_YLD', 'ROE'],
+                    # hover_data=['FLUC_RT', 'FLUC_AMT', 'IND_FLUC_RT', 'PER', 'PBR', 'DVD_YLD', 'ROE'],
+                    hover_data=['FLUC_RT', 'FLUC_AMT', 'IND_FLUC_RT'],
                     color=dict_Metric[selMetric][0],
                     #color='IND_FLUC_RT',
                     #color_continuous_scale='Turbo',
@@ -649,10 +651,12 @@ def TreeMap(mktType):
                     #color_continuous_midpoint=0,
                     width=1200,
                     height=700,
-                    custom_data=['IND_FLUC_RT', 'FLUC_RT', 'ISU_ABBRV', 'ISU_SRT_CD', 'MKT_TP_NM', 'MKT_FLUC_RT', 'PER', 'PBR', 'DVD_YLD', 'ROE'],
+                    # custom_data=['IND_FLUC_RT', 'FLUC_RT', 'ISU_ABBRV', 'ISU_SRT_CD', 'MKT_TP_NM', 'MKT_FLUC_RT', 'PER', 'PBR', 'DVD_YLD', 'ROE'],
+                    custom_data=['IND_FLUC_RT', 'FLUC_RT', 'ISU_ABBRV', 'ISU_SRT_CD', 'MKT_TP_NM', 'MKT_FLUC_RT'],
                     )
 
-    fig.data[0].customdata = np.column_stack([df_KRX_12025['FLUC_RT'].tolist(), df_KRX_12025['PER'].tolist(), df_KRX_12025['PBR'].tolist(), df_KRX_12025['DVD_YLD'].tolist(), df_KRX_12025['ROE'].tolist()])
+    # fig.data[0].customdata = np.column_stack([df_KRX_12025['FLUC_RT'].tolist(), df_KRX_12025['PER'].tolist(), df_KRX_12025['PBR'].tolist(), df_KRX_12025['DVD_YLD'].tolist(), df_KRX_12025['ROE'].tolist()])
+    fig.data[0].customdata = np.column_stack([df_KRX_12025['FLUC_RT'].tolist()])
 
     if selMetric in ['Price', 'Dividend', 'ROE']:
         fig.data[0].texttemplate = "%{label}<br>%{customdata["+str(dict_Metric[selMetric][1])+"]:.2f}%"
@@ -661,7 +665,7 @@ def TreeMap(mktType):
 
 
     fig.update_traces(hovertemplate=None, hoverinfo='skip', textfont_size=14)
-    fig.update_traces(hovertemplate='PER %{customdata[1]:.1f}<br>PBR %{customdata[2]:.1f}<br>Dividend %{customdata[3]:.1f}%<br>ROE %{customdata[4]:.1f}%', textfont_size=14)
+    # fig.update_traces(hovertemplate='PER %{customdata[1]:.1f}<br>PBR %{customdata[2]:.1f}<br>Dividend %{customdata[3]:.1f}%<br>ROE %{customdata[4]:.1f}%', textfont_size=14)
     fig.update_layout(
         margin=dict(l=20, r=20, t=20, b=20),
         paper_bgcolor="LightSteelBlue",
@@ -675,8 +679,17 @@ def TreeMap(mktType):
 
 with tab4:
     st.subheader("Treemap for Korean Stock Market")
-
+    
     treemap_market = st.radio(label = 'Market', options = ['KOSPI', 'KOSDAQ', 'ALL'], index=0)
+    treemap_switch = tog.st_toggle_switch(label="Label", 
+                                          key="Key1", 
+                                          default_value=False, 
+                                          label_after = False, 
+                                          inactive_color = '#D3D3D3', 
+                                          active_color="#11567f", 
+                                          track_color="#29B5E8"
+                                          )
+
     st.write('<style>div.row-widget.stRadio> div{flex-direction:row;}</style>', unsafe_allow_html=True)
     fig_4 = TreeMap(treemap_market)
 

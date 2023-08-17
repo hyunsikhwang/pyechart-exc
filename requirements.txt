@@ -8,3 +8,4 @@ pymongo
 pykrx
 pytz
 plotly
+streamlit-toggle-switch
