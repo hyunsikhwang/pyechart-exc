@@ -680,7 +680,7 @@ def TreeMap(mktType):
 with tab4:
     st.subheader("Treemap for Korean Stock Market")
     
-    treemap_market = st.radio(label = 'Market', options = ['KOSPI', 'KOSDAQ', 'ALL'], index=0)
+    treemap_market = st.radio(label = 'Market', options = ['KOSPI', 'KOSDAQ', 'ALL'], index=2)
     st.write('<style>div.row-widget.stRadio> div{flex-direction:row;}</style>', unsafe_allow_html=True)
 
     ct = st.container()
