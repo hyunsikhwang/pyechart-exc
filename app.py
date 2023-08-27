@@ -18,7 +18,8 @@ from datetime import datetime, timedelta
 from pytz import timezone, utc
 import plotly.express as px
 import plotly.io as pio
-
+import os
+os.system('pip install -U kaleido')
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
 

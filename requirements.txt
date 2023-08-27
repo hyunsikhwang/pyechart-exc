@@ -10,3 +10,4 @@ pytz
 plotly
 psutil
 kaleido
+os
