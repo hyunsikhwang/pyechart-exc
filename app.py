@@ -691,7 +691,10 @@ with tab4:
     st.plotly_chart(fig_4, use_container_width=True)
 
     pio.write_image(fig_4, "treemap.png")
-    st.download_button(
-        label="Download static image",
-        file_name='treemap.png',
-    )
+    with open("treemap.png", "rb") as file:
+        btn = st.download_button(
+                label="Download image",
+                data=file,
+                file_name="treemap.png",
+                mime="image/png"
+            )
