@@ -8,3 +8,5 @@ pymongo
 pykrx
 pytz
 plotly
+psutil
+kaleido

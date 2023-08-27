@@ -17,7 +17,7 @@ from pykrx import stock
 from datetime import datetime, timedelta
 from pytz import timezone, utc
 import plotly.express as px
-import  streamlit_toggle as tog
+import plotly.io as pio
 
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
@@ -690,3 +690,8 @@ with tab4:
 
     st.plotly_chart(fig_4, use_container_width=True)
 
+    pio.write_image(fig_4, "treemap.png")
+    st.download_button(
+        label="Download static image",
+        file_name='treemap.png',
+    )
