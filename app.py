@@ -245,10 +245,10 @@ with tab2:
     band = f'{initRatio:.0%} base'
 
     # Buffet Index Range
-    Ratio_max = 1.08
-    Ratio_min = 0.58
-    Ratio_high = 0.91
-    Ratio_low = 0.75
+    Ratio_max = 1.14
+    Ratio_min = 0.61
+    Ratio_high = 0.97
+    Ratio_low = 0.79
 
     selPeriod = st.selectbox('Select Year', ['All', '1', '2', '3', '4', '5', '10'], index=5)
 
