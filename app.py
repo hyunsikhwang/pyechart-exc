@@ -267,7 +267,7 @@ with tab2:
     df_new[bandHigh] = df_new[band] * Ratio_high / initRatio
     df_new[bandMax] = df_new[band] * Ratio_max / initRatio
 
-    df_new = df_new.fillna(method='ffill')
+    df_new = df_new.ffil()
 
     if selPeriod != 'All':
         end_dd = datetime.today().strftime("%Y-%m-%d")
@@ -400,7 +400,7 @@ with tab3:
 
     df_vals = pd.DataFrame()
     for quote in quotes:
-        df_val = stock.get_index_fundamental(f"{SeoulTime[:4]}0101", SeoulTime, "1001").reset_index()
+        df_val = stock.get_index_fundamental(f"{SeoulTime[:4]}0101", SeoulTime, quote).reset_index()
         df_val = df_val.tail(1)[['PER', 'PBR']]
         df_vals = pd.concat([df_vals, df_val])
 
