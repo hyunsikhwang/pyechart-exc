@@ -267,7 +267,7 @@ with tab2:
     df_new[bandHigh] = df_new[band] * Ratio_high / initRatio
     df_new[bandMax] = df_new[band] * Ratio_max / initRatio
 
-    df_new = df_new.ffil()
+    df_new = df_new.ffill()
 
     if selPeriod != 'All':
         end_dd = datetime.today().strftime("%Y-%m-%d")
