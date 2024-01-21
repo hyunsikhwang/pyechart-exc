@@ -383,6 +383,8 @@ with tab2:
     components.html(line_buffet, height=800)
 
 with tab3:
+    quotes = ['1001', '1028', '2001', '2203']
+
     st.subheader("Dashboard")
 
     KST = timezone('Asia/Seoul')
@@ -396,7 +398,14 @@ with tab3:
 
     df_KR = pd.concat([df_KS[(df_KS['지수명'].isin(['코스피', '코스피 200']))], df_KQ[(df_KQ['지수명'].isin(['코스닥', '코스닥 150']))]]).reset_index(drop=True)[['지수명', '시가', '종가', '등락률']]
 
+    df_vals = pd.DataFrame()
+    for quote in quotes:
+        df_val = stock.get_index_fundamental(f"{SeoulTime[:4]}0101", SeoulTime, "1001").reset_index()
+        df_val = df_val.tail(1)[['PER', 'PBR']]
+        df_vals = pd.concat([df_vals, df_val])
+
     st.write(df_KR)
+    st.write(df_vals)
 
 def maxworkdt_command():
  
