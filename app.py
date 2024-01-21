@@ -404,8 +404,10 @@ with tab3:
         df_val = df_val.tail(1)[['PER', 'PBR']]
         df_vals = pd.concat([df_vals, df_val])
 
+    df_KR = pd.concat([df_KR, df_vals], axis=1)
+
     st.write(df_KR)
-    st.write(df_vals)
+    # st.write(df_vals)
 
 def maxworkdt_command():
  
