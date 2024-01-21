@@ -404,6 +404,7 @@ with tab3:
         df_val = df_val.tail(1)[['PER', 'PBR']]
         df_vals = pd.concat([df_vals, df_val])
 
+    df_vals = df_vals.reset_index(drop=True)
     df_KR = pd.concat([df_KR, df_vals], axis=1)
 
     st.write(df_KR)
