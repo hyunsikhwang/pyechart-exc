@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 from pytz import timezone, utc
 import plotly.express as px
 import plotly.io as pio
+import yfinance as yf
 import os
 os.system('pip install -U kaleido')
 
@@ -382,6 +383,72 @@ with tab2:
 
     components.html(line_buffet, height=800)
 
+class vlStatus:
+
+    def __init__(self, market):
+        KST = timezone('Asia/Seoul')
+        now = datetime.utcnow()
+
+        self.dtNow = utc.localize(now).astimezone(KST).strftime('%Y%m%d')
+        self.dtPrev = f"{int(utc.localize(now).astimezone(KST).strftime('%Y'))-1}-12-01"
+        self.dtThisYear = int(f"{int(utc.localize(now).astimezone(KST).strftime('%Y'))}")
+
+    def kr(self, quote):
+
+        self.dtPrev = self.dtPrev.replace('-', '')
+        df_idx = stock.get_index_fundamental(self.dtPrev, self.dtNow, quote).reset_index()
+
+        df_idx_max = df_idx.groupby(pd.DatetimeIndex(df_idx['날짜']).year, as_index=False).agg({'날짜': max}).reset_index(drop=True)
+        df_idx2 = pd.merge(df_idx, df_idx_max, how='right', on='날짜')[['날짜', '종가']]
+        df_idx2['pct_change'] = df_idx2['종가'].pct_change(periods=1, axis='rows')
+
+        df_idx.rename(columns={'날짜':'Date', '종가':'Close'}, inplace=True)
+
+        date = pd.to_datetime(df_idx2.tail(1)['날짜'].values[0]).strftime("%Y년 %m월 %d일")
+        value_closed = df_idx2.tail(1)['종가'].values[0]
+        change_closed = df_idx2.tail(1)['pct_change'].values[0]
+
+        updn = '상승' if change_closed > 0 else '하락'
+        res_str = f"{quote} 의 {date} 기준 종가는 {value_closed:,.2f} 이며, 연초대비 {change_closed:.2%} {updn}하였습니다."
+
+        df_idx = df_idx[['Date', 'Close']]
+        df_idx.loc[:, 'quote'] = quote
+        df_idx = df_idx[(df_idx['Date']>=df_idx.groupby(pd.DatetimeIndex(df_idx['Date']).year, as_index=False).agg({'Date': max}).reset_index(drop=True)['Date'].head(1).values[0])]
+        df_idx['changepct'] = df_idx['Close'] / df_idx.head(1)['Close'].values[0]
+
+        df_idx = df_idx.reset_index(drop=True)
+        df_idx.loc[0, 'Date'] = f'{self.dtThisYear}-01-01'
+
+        return res_str, df_idx
+
+    def us(self, quote):
+        idx = yf.Ticker(quote)
+        df_idx = idx.history(start=self.dtPrev).reset_index()
+
+        df_idx_max = df_idx.groupby(pd.DatetimeIndex(df_idx['Date']).year, as_index=False).agg({'Date': max}).reset_index(drop=True)
+        df_idx2 = pd.merge(df_idx, df_idx_max, how='right', on='Date')[['Date', 'Close']]
+        df_idx2['pct_change'] = df_idx2['Close'].pct_change(periods=1, axis='rows')
+
+        date = pd.to_datetime(df_idx2.tail(1)['Date'].values[0]).strftime("%Y년 %m월 %d일")
+        value_closed = df_idx2.tail(1)['Close'].values[0]
+        change_closed = df_idx2.tail(1)['pct_change'].values[0]
+
+        updn = '상승' if change_closed > 0 else '하락'
+        res_str = f"{quote} 의 {date} 기준 종가는 {value_closed:,.2f} 이며, 연초대비 {change_closed:.2%} {updn}하였습니다."
+
+        df_idx['Date'] = df_idx['Date'].dt.tz_localize(None)
+        df_idx = df_idx[['Date', 'Close']]
+        df_idx.loc[:, 'quote'] = quote
+        df_idx = df_idx[(df_idx['Date']>=df_idx.groupby(pd.DatetimeIndex(df_idx['Date']).year, as_index=False).agg({'Date': max}).reset_index(drop=True)['Date'].head(1).values[0])]
+        df_idx['changepct'] = df_idx['Close'] / df_idx.head(1)['Close'].values[0]
+
+        df_idx = df_idx.reset_index(drop=True)
+        df_idx.loc[0, 'Date'] = f'{self.dtThisYear}-01-01'
+
+        return res_str, df_idx
+
+
+
 with tab3:
     quotes = ['1001', '1028', '2001', '2203']
 
@@ -409,6 +476,39 @@ with tab3:
 
     st.write(df_KR)
     # st.write(df_vals)
+
+    quotes_index = {'kr':["1001", "2001"],
+                    'us': ['^GSPC', '^DJI', '^IXIC', '^RUT', '^N225']
+                    }
+
+    df = pd.DataFrame()
+
+    for mkt in quotes_index.keys():
+        x = vlStatus(market=mkt)
+        for quote in quotes_index[mkt]:
+            # print(f"x.{mkt}('{quote}')[1]")
+            df_tmp = eval(f"x.{mkt}('{quote}')[1]")
+            df = pd.concat([df, df_tmp])
+    
+    fig = px.line(df,
+              x='Date',
+              y='changepct',
+              color='quote',
+              line_shape='spline',
+              markers=False,
+            #   animation_frame='ix'
+              )
+    fig.update_xaxes(dtick="D1",
+                    zeroline=True, zerolinewidth=2, zerolinecolor='LightPink')
+    fig.update_layout(width=1200)
+    fig.add_shape( # add a horizontal "target" line
+        type="line", line_color="salmon", line_width=2, opacity=1, line_dash="dot",
+        x0=0, x1=1, xref="paper", y0=1, y1=1, yref="y"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
 
 def maxworkdt_command():
  
