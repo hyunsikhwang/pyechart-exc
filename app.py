@@ -500,7 +500,7 @@ with tab3:
               )
     fig.update_xaxes(dtick="D1",
                     zeroline=True, zerolinewidth=2, zerolinecolor='LightPink')
-    fig.update_layout(width=1200)
+    fig.update_layout(width=800)
     fig.add_shape( # add a horizontal "target" line
         type="line", line_color="salmon", line_width=2, opacity=1, line_dash="dot",
         x0=0, x1=1, xref="paper", y0=1, y1=1, yref="y"
