@@ -385,7 +385,7 @@ with tab2:
 
 class vlStatus:
 
-    def __init__(self, market):
+    def __init__(self):
         KST = timezone('Asia/Seoul')
         now = datetime.utcnow()
 
@@ -393,7 +393,7 @@ class vlStatus:
         self.dtPrev = f"{int(utc.localize(now).astimezone(KST).strftime('%Y'))-1}-12-01"
         self.dtThisYear = int(f"{int(utc.localize(now).astimezone(KST).strftime('%Y'))}")
 
-    def kr(self, quote):
+    def kr(self, quote, quoteName):
 
         self.dtPrev = self.dtPrev.replace('-', '')
         df_idx = stock.get_index_fundamental(self.dtPrev, self.dtNow, quote).reset_index()
@@ -413,6 +413,7 @@ class vlStatus:
 
         df_idx = df_idx[['Date', 'Close']]
         df_idx.loc[:, 'quote'] = quote
+        df_idx.loc[:, 'quoteName'] = quoteName
         df_idx = df_idx[(df_idx['Date']>=df_idx.groupby(pd.DatetimeIndex(df_idx['Date']).year, as_index=False).agg({'Date': max}).reset_index(drop=True)['Date'].head(1).values[0])]
         df_idx['changepct'] = df_idx['Close'] / df_idx.head(1)['Close'].values[0]
 
@@ -421,7 +422,7 @@ class vlStatus:
 
         return res_str, df_idx
 
-    def us(self, quote):
+    def us(self, quote, quoteName):
         idx = yf.Ticker(quote)
         df_idx = idx.history(start=self.dtPrev).reset_index()
 
@@ -439,6 +440,7 @@ class vlStatus:
         df_idx['Date'] = df_idx['Date'].dt.tz_localize(None)
         df_idx = df_idx[['Date', 'Close']]
         df_idx.loc[:, 'quote'] = quote
+        df_idx.loc[:, 'quoteName'] = quoteName
         df_idx = df_idx[(df_idx['Date']>=df_idx.groupby(pd.DatetimeIndex(df_idx['Date']).year, as_index=False).agg({'Date': max}).reset_index(drop=True)['Date'].head(1).values[0])]
         df_idx['changepct'] = df_idx['Close'] / df_idx.head(1)['Close'].values[0]
 
@@ -477,17 +479,22 @@ with tab3:
     st.write(df_KR)
     # st.write(df_vals)
 
-    quotes_index = {'kr':["1001", "2001"],
-                    'us': ['^GSPC', '^DJI', '^IXIC', '^RUT', '^N225']
+    quotes_index = {'kr':{"KOSPI":"1001",
+                          "KOSDAQ":"2001"},
+                    'us': {"S&P 500":'^GSPC',
+                           "Dow Jones":'^DJI',
+                           "NASDAQ":'^IXIC',
+                           "Russell 2000":'^RUT',
+                           "Nikkei 225":'^N225'}
                     }
 
     df = pd.DataFrame()
 
     for mkt in quotes_index.keys():
         x = vlStatus(market=mkt)
-        for quote in quotes_index[mkt]:
+        for quote, quoteName in zip(quotes_index[mkt].values(), quotes_index[mkt].keys()):
             # print(f"x.{mkt}('{quote}')[1]")
-            df_tmp = eval(f"x.{mkt}('{quote}')[1]")
+            df_tmp = eval(f"x.{mkt}('{quote}', '{quoteName}')[1]")
             df = pd.concat([df, df_tmp])
     
     fig = px.line(df,
