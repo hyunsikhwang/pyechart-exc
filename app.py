@@ -385,7 +385,7 @@ with tab2:
 
 class vlStatus:
 
-    def __init__(self):
+    def __init__(self, market):
         KST = timezone('Asia/Seoul')
         now = datetime.utcnow()
 
