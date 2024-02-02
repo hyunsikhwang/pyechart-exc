@@ -500,7 +500,7 @@ with tab3:
     fig = px.line(df,
               x='Date',
               y='changepct',
-              color='quote',
+              color='quoteName',
               line_shape='spline',
               markers=False,
             #   animation_frame='ix'
