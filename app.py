@@ -497,14 +497,22 @@ with tab3:
             df_tmp = eval(f"x.{mkt}('{quote}', '{quoteName}')[1]")
             df = pd.concat([df, df_tmp])
     
+    df['changepct2'] = df['changepct']-1
+
     fig = px.line(df,
-              x='Date',
-              y='changepct',
-              color='quoteName',
-              line_shape='spline',
-              markers=False,
-            #   animation_frame='ix'
-              )
+                x='Date',
+                y='changepct',
+                color='quoteName',
+                line_shape='spline',
+                markers=False,
+                custom_data=['quoteName','Date', 'changepct2'],
+                )
+    hovertemplate = hovertemplate="<br>".join([
+            "Market: %{customdata[0]}",
+            "Date: %{x}",
+            "Change%: %{customdata[2]:.1%}"])
+
+    fig.update_traces(hovertemplate=hovertemplate)
     fig.update_xaxes(dtick="D1",
                     zeroline=True, zerolinewidth=2, zerolinecolor='LightPink')
     fig.update_layout(width=1200, legend_title=None)
