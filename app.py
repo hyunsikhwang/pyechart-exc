@@ -48,7 +48,7 @@ def get_bs_KRX(url, params):
     return bs4.BeautifulSoup(requests.get(url, headers=headers, params=params).text, "lxml")
 
 
-tab1, tab2, tab3, tab4 = st.tabs(["Fear and Greed Index", "Buffet Index(Korea)", "Dashboard", "Treemap(Korea)"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Fear and Greed Index", "Buffet Index(Korea)", "Dashboard", "Treemap(Korea)", "Waterfall", "Bond Yield"])
 
 with tab1:
     response = get_bs(url)
@@ -827,3 +827,73 @@ with tab4:
                 file_name="treemap.png",
                 mime="image/png"
             )
+
+
+# KOSPI Waterfall
+with tab5:
+    KST = timezone('Asia/Seoul')
+    now = datetime.utcnow()
+    SeoulTime = utc.localize(now).astimezone(KST).strftime('%Y%m%d')
+
+    df = stock.get_index_fundamental('20020101', SeoulTime, '1001').reset_index()
+
+    df1 = df.reset_index()[['날짜', '종가']].copy()
+    df2 = df1[~df1['날짜'].dt.strftime('%Y-%m').duplicated()].copy()
+
+    df2 = pd.concat([df2, df1.tail(1)])
+    df2['pct'] = df2['종가'].pct_change(periods=1, axis=0)
+    df2['diff'] = df2['종가'].diff()
+
+    fig = go.Figure(go.Waterfall(
+        name = "KOSPI", orientation = "v",
+        measure = ["relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", ],
+        x = df2['날짜'],
+        textposition = "outside",
+        text = df2['종가'],
+        y = df2['diff'],
+        connector = {"line":{"color":"rgb(63, 63, 63)"}},
+    ))
+
+    fig.update_xaxes(dtick="M12")
+    fig.update_xaxes(showgrid=True, minor_showgrid=True, gridwidth=1, griddash='dash', gridcolor='LightPink')
+
+    px.plotly_chart(fig, use_container_width=True)
+
+# Bond Yield
+with tab6:
+    KST = timezone('Asia/Seoul')
+    now = datetime.utcnow()
+    SeoulTime = utc.localize(now).astimezone(KST)
+    nowSeo = SeoulTime.strftime('%Y%m%d')
+    bfr10y = (SeoulTime - relativedelta(years=10)).strftime('%Y%m%d')
+
+    bond_cd = ['010190000',
+            '010200000',
+            '010210000',
+            '010220000',
+            '010230000',
+            '010240000',
+            '010300000'
+            ]
+
+
+    df_tot = pd.DataFrame()
+    #금리
+    for bond in bond_cd:
+        url = f'http://ecos.bok.or.kr/api/StatisticSearch/967SFAC1NLQO1Z31HUMX/json/kr/1/10000/817Y002/D/20020101/{nowSeo}/{bond}'
+
+        res = requests.get(url)
+        resJsn = json.loads(res.text)['StatisticSearch']['row']
+
+        df = pd.DataFrame(resJsn)
+        df['DATA_VALUE'] = df['DATA_VALUE'].astype(float)
+        df['TIME'] = pd.to_datetime(df['TIME'])
+
+        df_tot = pd.concat([df_tot, df])
+
+    fig = px.line(df_tot, x='TIME', y='DATA_VALUE', color='ITEM_NAME1')
+    fig.update_xaxes(dtick='M12', showspikes=True, spikecolor="green", spikesnap="cursor", spikemode="across", spikethickness=1)
+    fig.update_yaxes(showspikes=True, spikecolor="orange", spikethickness=1)
+
+    px.plotly_chart(fig, use_container_width=True)
+
