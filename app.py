@@ -880,9 +880,10 @@ with tab6:
 
 
     df_tot = pd.DataFrame()
+
     #금리
     for bond in bond_cd:
-        url = f'http://ecos.bok.or.kr/api/StatisticSearch/967SFAC1NLQO1Z31HUMX/json/kr/1/10000/817Y002/D/20020101/{nowSeo}/{bond}'
+        url = f'http://ecos.bok.or.kr/api/StatisticSearch/{ecos_api_key}/json/kr/1/10000/817Y002/D/20020101/{nowSeo}/{bond}'
 
         res = requests.get(url)
         resJsn = json.loads(res.text)['StatisticSearch']['row']
