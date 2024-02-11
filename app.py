@@ -20,6 +20,8 @@ import plotly.express as px
 import plotly.io as pio
 import yfinance as yf
 import os
+import plotly.graph_objects as go
+
 os.system('pip install -U kaleido')
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
