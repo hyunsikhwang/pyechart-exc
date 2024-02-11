@@ -859,7 +859,7 @@ with tab5:
     fig.update_xaxes(dtick="M12")
     fig.update_xaxes(showgrid=True, minor_showgrid=True, gridwidth=1, griddash='dash', gridcolor='LightPink')
 
-    px.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
 # Bond Yield
 with tab6:
@@ -897,5 +897,5 @@ with tab6:
     fig.update_xaxes(dtick='M12', showspikes=True, spikecolor="green", spikesnap="cursor", spikemode="across", spikethickness=1)
     fig.update_yaxes(showspikes=True, spikecolor="orange", spikethickness=1)
 
-    px.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
