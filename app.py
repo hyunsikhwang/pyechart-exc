@@ -869,21 +869,21 @@ with tab6:
     nowSeo = SeoulTime.strftime('%Y%m%d')
     bfr10y = (SeoulTime - relativedelta(years=10)).strftime('%Y%m%d')
 
-    bond_cd = ['010190000',
-            '010200000',
-            '010210000',
-            '010220000',
-            '010230000',
-            '010240000',
-            '010300000'
-            ]
-
+    bond_cd = {'0101000': '722Y001',
+               '010190000': '817Y002',
+               '010200000': '817Y002',
+               '010210000': '817Y002',
+               '010220000': '817Y002',
+               '010230000': '817Y002',
+               '010240000': '817Y002',
+               '010300000': '817Y002',
+               }
 
     df_tot = pd.DataFrame()
 
     #금리
-    for bond in bond_cd:
-        url = f'http://ecos.bok.or.kr/api/StatisticSearch/{ecos_api_key}/json/kr/1/10000/817Y002/D/20020101/{nowSeo}/{bond}'
+    for (bondcd, bondcd1) in zip(list(bond_cd.values()), list(bond_cd.keys())):
+        url = f'http://ecos.bok.or.kr/api/StatisticSearch/967SFAC1NLQO1Z31HUMX/json/kr/1/10000/{bondcd}/D/20020101/{nowSeo}/{bondcd1}'
 
         res = requests.get(url)
         resJsn = json.loads(res.text)['StatisticSearch']['row']
