@@ -896,6 +896,7 @@ with tab6:
 
     fig = px.line(df_tot, x='TIME', y='DATA_VALUE', color='ITEM_NAME1')
     fig.update_xaxes(dtick='M12', showspikes=True, spikecolor="green", spikesnap="cursor", spikemode="across", spikethickness=1)
+    fig.update_xaxes(showgrid=True, minor_showgrid=True, gridwidth=1, griddash='dash', gridcolor='LightPink')
     fig.update_yaxes(showspikes=True, spikecolor="orange", spikethickness=1)
 
     st.plotly_chart(fig, use_container_width=True)
