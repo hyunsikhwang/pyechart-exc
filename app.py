@@ -459,7 +459,7 @@ with tab3:
 
     SeoulTime = utc.localize(now).astimezone(KST).strftime('%Y%m%d')
     SeoulTime_b7d = (utc.localize(now).astimezone(KST) - timedelta(days=7)).strftime('%Y%m%d')
-
+    st.write(SeoulTime)
     df_KS = stock.get_index_price_change(f"{SeoulTime[:4]}0101", SeoulTime, "KOSPI").reset_index()
     df_KQ = stock.get_index_price_change(f"{SeoulTime[:4]}0101", SeoulTime, "KOSDAQ").reset_index()
 
