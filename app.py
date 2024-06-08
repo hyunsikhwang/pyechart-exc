@@ -20,6 +20,8 @@ import plotly.express as px
 import plotly.io as pio
 import yfinance as yf
 import os
+import plotly.graph_objects as go
+
 os.system('pip install -U kaleido')
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
@@ -48,7 +50,7 @@ def get_bs_KRX(url, params):
     return bs4.BeautifulSoup(requests.get(url, headers=headers, params=params).text, "lxml")
 
 
-tab1, tab2, tab3, tab4 = st.tabs(["Fear and Greed Index", "Buffet Index(Korea)", "Dashboard", "Treemap(Korea)"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Fear and Greed Index", "Buffet Index(Korea)", "Dashboard", "Treemap(Korea)", "Waterfall", "Bond Yield"])
 
 with tab1:
     response = get_bs(url)
@@ -246,10 +248,10 @@ with tab2:
     band = f'{initRatio:.0%} base'
 
     # Buffet Index Range
-    Ratio_max = 1.14
-    Ratio_min = 0.61
-    Ratio_high = 0.97
-    Ratio_low = 0.79
+    Ratio_max = 1.10
+    Ratio_min = 0.60
+    Ratio_high = 1.00
+    Ratio_low = 0.80
 
     selPeriod = st.selectbox('Select Year', ['All', '1', '2', '3', '4', '5', '10'], index=5)
 
@@ -393,7 +395,7 @@ class vlStatus:
         self.dtPrev = f"{int(utc.localize(now).astimezone(KST).strftime('%Y'))-1}-12-01"
         self.dtThisYear = int(f"{int(utc.localize(now).astimezone(KST).strftime('%Y'))}")
 
-    def kr(self, quote):
+    def kr(self, quote, quoteName):
 
         self.dtPrev = self.dtPrev.replace('-', '')
         df_idx = stock.get_index_fundamental(self.dtPrev, self.dtNow, quote).reset_index()
@@ -413,6 +415,7 @@ class vlStatus:
 
         df_idx = df_idx[['Date', 'Close']]
         df_idx.loc[:, 'quote'] = quote
+        df_idx.loc[:, 'quoteName'] = quoteName
         df_idx = df_idx[(df_idx['Date']>=df_idx.groupby(pd.DatetimeIndex(df_idx['Date']).year, as_index=False).agg({'Date': max}).reset_index(drop=True)['Date'].head(1).values[0])]
         df_idx['changepct'] = df_idx['Close'] / df_idx.head(1)['Close'].values[0]
 
@@ -421,7 +424,7 @@ class vlStatus:
 
         return res_str, df_idx
 
-    def us(self, quote):
+    def us(self, quote, quoteName):
         idx = yf.Ticker(quote)
         df_idx = idx.history(start=self.dtPrev).reset_index()
 
@@ -439,6 +442,7 @@ class vlStatus:
         df_idx['Date'] = df_idx['Date'].dt.tz_localize(None)
         df_idx = df_idx[['Date', 'Close']]
         df_idx.loc[:, 'quote'] = quote
+        df_idx.loc[:, 'quoteName'] = quoteName
         df_idx = df_idx[(df_idx['Date']>=df_idx.groupby(pd.DatetimeIndex(df_idx['Date']).year, as_index=False).agg({'Date': max}).reset_index(drop=True)['Date'].head(1).values[0])]
         df_idx['changepct'] = df_idx['Close'] / df_idx.head(1)['Close'].values[0]
 
@@ -477,36 +481,49 @@ with tab3:
     st.write(df_KR)
     # st.write(df_vals)
 
-    quotes_index = {'kr':["1001", "2001"],
-                    'us': ['^GSPC', '^DJI', '^IXIC', '^RUT', '^N225']
+    quotes_index = {'kr':{"KOSPI":"1001",
+                          "KOSDAQ":"2001"},
+                    'us': {"S&P 500":'^GSPC',
+                           "Dow Jones":'^DJI',
+                           "NASDAQ":'^IXIC',
+                           "Russell 2000":'^RUT',
+                           "Nikkei 225":'^N225'}
                     }
 
     df = pd.DataFrame()
 
     for mkt in quotes_index.keys():
         x = vlStatus(market=mkt)
-        for quote in quotes_index[mkt]:
+        for quote, quoteName in zip(quotes_index[mkt].values(), quotes_index[mkt].keys()):
             # print(f"x.{mkt}('{quote}')[1]")
-            df_tmp = eval(f"x.{mkt}('{quote}')[1]")
+            df_tmp = eval(f"x.{mkt}('{quote}', '{quoteName}')[1]")
             df = pd.concat([df, df_tmp])
     
+    df['changepct2'] = df['changepct']-1
+
     fig = px.line(df,
-              x='Date',
-              y='changepct',
-              color='quote',
-              line_shape='spline',
-              markers=False,
-            #   animation_frame='ix'
-              )
+                x='Date',
+                y='changepct',
+                color='quoteName',
+                line_shape='spline',
+                markers=False,
+                custom_data=['quoteName','Date', 'changepct2'],
+                )
+    hovertemplate = hovertemplate="<br>".join([
+            "Market: %{customdata[0]}",
+            "Date: %{x}",
+            "Change%: %{customdata[2]:.1%}"])
+
+    fig.update_traces(hovertemplate=hovertemplate)
     fig.update_xaxes(dtick="D1",
                     zeroline=True, zerolinewidth=2, zerolinecolor='LightPink')
-    fig.update_layout(width=1200)
+    fig.update_layout(width=1200, legend_title=None)
     fig.add_shape( # add a horizontal "target" line
         type="line", line_color="salmon", line_width=2, opacity=1, line_dash="dot",
         x0=0, x1=1, xref="paper", y0=1, y1=1, yref="y"
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=False)
 
 
 
@@ -812,3 +829,75 @@ with tab4:
                 file_name="treemap.png",
                 mime="image/png"
             )
+
+
+# KOSPI Waterfall
+with tab5:
+    KST = timezone('Asia/Seoul')
+    now = datetime.utcnow()
+    SeoulTime = utc.localize(now).astimezone(KST).strftime('%Y%m%d')
+
+    df = stock.get_index_fundamental('20020101', SeoulTime, '1001').reset_index()
+
+    df1 = df.reset_index()[['날짜', '종가']].copy()
+    df2 = df1[~df1['날짜'].dt.strftime('%Y-%m').duplicated()].copy()
+
+    df2 = pd.concat([df2, df1.tail(1)])
+    df2['pct'] = df2['종가'].pct_change(periods=1, axis=0)
+    df2['diff'] = df2['종가'].diff()
+
+    fig = go.Figure(go.Waterfall(
+        name = "KOSPI", orientation = "v",
+        measure = ["relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", ],
+        x = df2['날짜'],
+        textposition = "outside",
+        text = df2['종가'],
+        y = df2['diff'],
+        connector = {"line":{"color":"rgb(63, 63, 63)"}},
+    ))
+
+    fig.update_xaxes(dtick="M12")
+    fig.update_xaxes(showgrid=True, minor_showgrid=True, gridwidth=1, griddash='dash', gridcolor='LightPink')
+
+    st.plotly_chart(fig, use_container_width=True)
+
+# Bond Yield
+with tab6:
+    KST = timezone('Asia/Seoul')
+    now = datetime.utcnow()
+    SeoulTime = utc.localize(now).astimezone(KST)
+    nowSeo = SeoulTime.strftime('%Y%m%d')
+    bfr10y = (SeoulTime - relativedelta(years=10)).strftime('%Y%m%d')
+
+    bond_cd = {'0101000': '722Y001',
+               '010190000': '817Y002',
+               '010200000': '817Y002',
+               '010210000': '817Y002',
+               '010220000': '817Y002',
+               '010230000': '817Y002',
+               '010240000': '817Y002',
+               '010300000': '817Y002',
+               }
+
+    df_tot = pd.DataFrame()
+
+    #금리
+    for (bondcd, bondcd1) in zip(list(bond_cd.values()), list(bond_cd.keys())):
+        url = f'http://ecos.bok.or.kr/api/StatisticSearch/967SFAC1NLQO1Z31HUMX/json/kr/1/10000/{bondcd}/D/20020101/{nowSeo}/{bondcd1}'
+
+        res = requests.get(url)
+        resJsn = json.loads(res.text)['StatisticSearch']['row']
+
+        df = pd.DataFrame(resJsn)
+        df['DATA_VALUE'] = df['DATA_VALUE'].astype(float)
+        df['TIME'] = pd.to_datetime(df['TIME'])
+
+        df_tot = pd.concat([df_tot, df])
+
+    fig = px.line(df_tot, x='TIME', y='DATA_VALUE', color='ITEM_NAME1')
+    fig.update_xaxes(dtick='M12', showspikes=True, spikecolor="green", spikesnap="cursor", spikemode="across", spikethickness=1)
+    fig.update_xaxes(showgrid=True, minor_showgrid=True, gridwidth=1, griddash='dash', gridcolor='LightPink')
+    fig.update_yaxes(showspikes=True, spikecolor="orange", spikethickness=1)
+
+    st.plotly_chart(fig, use_container_width=True)
+
