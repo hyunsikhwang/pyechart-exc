@@ -169,6 +169,7 @@ url = f'{ecos_url}/StatisticSearch/{ecos_api_key}/json/kr/1/10000/200Y005/Q/2000
 
 ecos_result = get_bs(url)
 ecos_json = json.loads(ecos_result.text)
+st.write(ecos_json)
 
 df = pd.json_normalize(ecos_json['StatisticSearch']['row'])
 df = df[['TIME', 'DATA_VALUE']]
@@ -451,6 +452,36 @@ class vlStatus:
 
         return res_str, df_idx
 
+# 업종분류현황
+def KRX_11007(endDd):
+    df_result = pd.DataFrame()
+
+    url = 'http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd'
+
+    df_result = pd.DataFrame()
+
+    payload = {'bld': 'dbms/MDC/STAT/standard/MDCSTAT00702',
+                'searchType': 'P',
+                'idxIndMidclssCd': '01',
+                'strtDd': f"{endDd[:4]}0101",
+                'endDd': endDd,
+                'tboxindTpCd_finder_equidx0_0': '코스피',
+                'codeNmindTpCd_finder_equidx0_0': '코스피',
+                'trdDd': endDd,
+                'indTpCd': '1',
+                'indTpCd2': '001',
+                'csvxls_isNo': 'false'
+    }
+    MktData = post_bs(url, payload)
+
+    data = json.loads(MktData.text)
+    #display(pd.DataFrame(data['block1']))
+
+    df = pd.DataFrame(data['output'])
+
+    df_result = pd.concat([df_result, df])
+
+    return df_result
 
 
 with tab3:
