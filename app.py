@@ -165,7 +165,7 @@ ecos_url = 'http://ecos.bok.or.kr/api'
 now = datetime.now()
 currYQ = f'{now.year}Q{(now.month-1)//3+1}'
 
-url = f'{ecos_url}/StatisticSearch/{ecos_api_key}/json/kr/1/10000/200Y005/Q/2000Q1/{currYQ}/1400'
+url = f'{ecos_url}/StatisticSearch/{ecos_api_key}/json/kr/1/10000/200Y105/Q/2000Q1/{currYQ}/1400'
 
 ecos_result = get_bs(url)
 ecos_json = json.loads(ecos_result.text)
