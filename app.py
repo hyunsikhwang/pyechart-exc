@@ -85,8 +85,10 @@ with tab5:
     SeoulTime = utc.localize(now).astimezone(KST).strftime('%Y%m%d')
 
     df = stock.get_index_fundamental('20020101', SeoulTime, '1001').reset_index()
+    # Handle both Korean and English column names
+    df = df.rename(columns={'Date': '날짜', 'Close': '종가'})
 
-    df1 = df.reset_index()[['날짜', '종가']].copy()
+    df1 = df[['날짜', '종가']].copy()
     df2 = df1[~df1['날짜'].dt.strftime('%Y-%m').duplicated()].copy()
 
     df2 = pd.concat([df2, df1.tail(1)])
