@@ -91,13 +91,21 @@ with tab5:
         # Fallback to OHLCV if fundamental fails
         df = stock.get_index_ohlcv_by_date('20020101', SeoulTime, '1001')
     
-    df = df.reset_index()
-    # Postional indexing: column 0 is Date, column 1 is usually the Price/Index value
-    # This works regardless of whether the columns are named in Korean or English
-    df1 = df.iloc[:, [0, 1]].copy()
-    df1.columns = ['날짜', '종가']
+    if df is not None and not df.empty:
+        df = df.reset_index()
+        # Postional indexing: column 0 is Date, column 1 is usually the Price/Index value
+        # This works regardless of whether the columns are named in Korean or English
+        if len(df.columns) >= 2:
+            df1 = df.iloc[:, [0, 1]].copy()
+            df1.columns = ['날짜', '종가']
 
-    df2 = df1[~df1['날짜'].dt.strftime('%Y-%m').duplicated()].copy()
+            df2 = df1[~df1['날짜'].dt.strftime('%Y-%m').duplicated()].copy()
+        else:
+            st.error("데이터 구조가 올바르지 않습니다.")
+            st.stop()
+    else:
+        st.warning("조회된 데이터가 없습니다. (KOSPI 데이터 수집 실패)")
+        st.stop()
 
     df2 = pd.concat([df2, df1.tail(1)])
     df2['pct'] = df2['종가'].pct_change(periods=1, axis=0)
