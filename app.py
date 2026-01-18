@@ -84,24 +84,19 @@ with tab5:
     now = datetime.utcnow()
     SeoulTime = utc.localize(now).astimezone(KST).strftime('%Y%m%d')
 
-    df = stock.get_index_fundamental('20020101', SeoulTime, '1001').reset_index()
-    # Robust renaming to handle different pykrx versions and locales
-    mapping = {
-        'Date': '날짜', 'date': '날짜', 'index': '날짜',
-        'Close': '종가', 'close': '종가', '지수': '종가', 'Index': '종가'
-    }
-    df = df.rename(columns=mapping)
+    # Defensive data fetching with positional indexing to avoid KeyError
+    try:
+        df = stock.get_index_fundamental('20020101', SeoulTime, '1001')
+    except Exception:
+        # Fallback to OHLCV if fundamental fails
+        df = stock.get_index_ohlcv_by_date('20020101', SeoulTime, '1001')
+    
+    df = df.reset_index()
+    # Postional indexing: column 0 is Date, column 1 is usually the Price/Index value
+    # This works regardless of whether the columns are named in Korean or English
+    df1 = df.iloc[:, [0, 1]].copy()
+    df1.columns = ['날짜', '종가']
 
-    # Fallback to OHLCV if columns are still missing (more reliable for price charts)
-    if '날짜' not in df.columns or '종가' not in df.columns:
-        df = stock.get_index_ohlcv_by_date('20020101', SeoulTime, '1001').reset_index()
-        df = df.rename(columns=mapping)
-
-    if '날짜' not in df.columns or '종가' not in df.columns:
-        st.error(f"데이터 컬럼을 찾을 수 없습니다. (Columns: {df.columns.tolist()})")
-        st.stop()
-
-    df1 = df[['날짜', '종가']].copy()
     df2 = df1[~df1['날짜'].dt.strftime('%Y-%m').duplicated()].copy()
 
     df2 = pd.concat([df2, df1.tail(1)])
