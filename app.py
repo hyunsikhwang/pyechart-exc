@@ -84,27 +84,39 @@ with tab5:
     now = datetime.utcnow()
     SeoulTime = utc.localize(now).astimezone(KST).strftime('%Y%m%d')
 
-    # Defensive data fetching with positional indexing to avoid KeyError
-    try:
-        df = stock.get_index_fundamental('20020101', SeoulTime, '1001')
-    except Exception:
-        # Fallback to OHLCV if fundamental fails
-        df = stock.get_index_ohlcv_by_date('20020101', SeoulTime, '1001')
+    # Multi-ticker and multi-source fallback strategy
+    tickers = ['1001', '코스피', 'KOSPI']
+    df = None
+    last_error = ""
+
+    for ticker in tickers:
+        try:
+            # Try fundamental first
+            df = stock.get_index_fundamental('20020101', SeoulTime, ticker)
+            if df is not None and not df.empty:
+                break
+            # Try ohlcv if fundamental is empty
+            df = stock.get_index_ohlcv_by_date('20020101', SeoulTime, ticker)
+            if df is not None and not df.empty:
+                break
+        except Exception as e:
+            last_error = str(e)
+            continue
     
     if df is not None and not df.empty:
         df = df.reset_index()
-        # Postional indexing: column 0 is Date, column 1 is usually the Price/Index value
-        # This works regardless of whether the columns are named in Korean or English
+        # Positional indexing for name-agnostic stability
         if len(df.columns) >= 2:
             df1 = df.iloc[:, [0, 1]].copy()
             df1.columns = ['날짜', '종가']
-
             df2 = df1[~df1['날짜'].dt.strftime('%Y-%m').duplicated()].copy()
         else:
-            st.error("데이터 구조가 올바르지 않습니다.")
+            st.error(f"데이터 구조가 올바르지 않습니다. (Columns: {df.columns.tolist()})")
             st.stop()
     else:
-        st.warning("조회된 데이터가 없습니다. (KOSPI 데이터 수집 실패)")
+        st.warning(f"KOSPI 데이터를 수집할 수 없습니다. (Tickers tried: {tickers})")
+        if last_error:
+            st.info(f"상세 오류: {last_error}")
         st.stop()
 
     df2 = pd.concat([df2, df1.tail(1)])
