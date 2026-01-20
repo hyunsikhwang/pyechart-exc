@@ -1,5 +1,4 @@
 from pyecharts import options as opts
-from streamlit_echarts import st_pyecharts
 import streamlit as st
 from pyecharts.charts import Line
 from pyecharts.commons.utils import JsCode
@@ -10,8 +9,6 @@ import json
 import pandas as pd
 from datetime import datetime, timedelta
 from pytz import timezone, utc
-import plotly.express as px
-
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
 
 st.header("pyechart")
@@ -107,9 +104,30 @@ with tab6:
 
         df_tot = pd.concat([df_tot, df])
 
-    fig = px.line(df_tot, x='TIME', y='DATA_VALUE', color='ITEM_NAME1')
-    fig.update_xaxes(dtick='M12', showspikes=True, spikecolor="green", spikesnap="cursor", spikemode="across", spikethickness=1)
-    fig.update_xaxes(showgrid=True, minor_showgrid=True, gridwidth=1, griddash='dash', gridcolor='LightPink')
-    fig.update_yaxes(showspikes=True, spikecolor="orange", spikethickness=1)
+    # Pivot for pyecharts
+    df_pivot = df_tot.pivot(index='TIME', columns='ITEM_NAME1', values='DATA_VALUE')
+    x_axis = df_pivot.index.strftime('%Y-%m-%d').tolist()
 
-    st.plotly_chart(fig, use_container_width=True)
+    line = Line(init_opts=opts.InitOpts(width="100%", height="600px"))
+    line.add_xaxis(x_axis)
+
+    for column in df_pivot.columns:
+        line.add_yaxis(
+            series_name=column,
+            y_axis=df_pivot[column].tolist(),
+            is_smooth=True,
+            is_symbol_show=False,
+            label_opts=opts.LabelOpts(is_show=False),
+        )
+
+    line.set_global_opts(
+        title_opts=opts.TitleOpts(title="Bond Yield"),
+        tooltip_opts=opts.TooltipOpts(trigger="axis", axis_pointer_type="cross"),
+        xaxis_opts=opts.AxisOpts(type_="category", boundary_gap=False),
+        yaxis_opts=opts.AxisOpts(type_="value", is_scale=True),
+        datazoom_opts=[opts.DataZoomOpts(type_="slider", range_start=80, range_end=100)],
+        legend_opts=opts.LegendOpts(pos_top="5%"),
+    )
+
+    # Render using components.html to match the pattern in tab1 if st_pyecharts has issues
+    components.html(line.render_embed(), height=600)
