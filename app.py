@@ -107,9 +107,37 @@ with tab6:
 
         df_tot = pd.concat([df_tot, df])
 
-    fig = px.line(df_tot, x='TIME', y='DATA_VALUE', color='ITEM_NAME1')
-    fig.update_xaxes(dtick='M12', showspikes=True, spikecolor="green", spikesnap="cursor", spikemode="across", spikethickness=1)
-    fig.update_xaxes(showgrid=True, minor_showgrid=True, gridwidth=1, griddash='dash', gridcolor='LightPink')
-    fig.update_yaxes(showspikes=True, spikecolor="orange", spikethickness=1)
+    # Ensure data is sorted
+    df_tot = df_tot.sort_values(by='TIME')
 
-    st.plotly_chart(fig, use_container_width=True)
+    # Prepare data for Pyecharts
+    unique_dates = sorted(df_tot['TIME'].unique())
+    x_axis = [d.strftime('%Y-%m-%d') for d in unique_dates]
+
+    line = Line(init_opts=opts.InitOpts(width="100%", height="600px"))
+    line.add_xaxis(x_axis)
+
+    for bond_name in df_tot['ITEM_NAME1'].unique():
+        bond_data = df_tot[df_tot['ITEM_NAME1'] == bond_name]
+        data_map = {row['TIME'].strftime('%Y-%m-%d'): row['DATA_VALUE'] for _, row in bond_data.iterrows()}
+        y_values = [data_map.get(date_str, None) for date_str in x_axis]
+
+        line.add_yaxis(
+            series_name=bond_name,
+            y_axis=y_values,
+            is_smooth=True,
+            is_symbol_show=False,
+            label_opts=opts.LabelOpts(is_show=False),
+            is_connect_nones=True
+        )
+
+    line.set_global_opts(
+        title_opts=opts.TitleOpts(title="Bond Yields"),
+        tooltip_opts=opts.TooltipOpts(trigger="axis"),
+        xaxis_opts=opts.AxisOpts(type_="category", boundary_gap=False),
+        yaxis_opts=opts.AxisOpts(type_="value", min_='dataMin'),
+        datazoom_opts=[opts.DataZoomOpts(range_start=0, range_end=100)],
+        legend_opts=opts.LegendOpts(pos_top="5%"),
+    )
+
+    st_pyecharts(line, height="600px")
