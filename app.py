@@ -9,11 +9,8 @@ import bs4
 import json
 import pandas as pd
 from datetime import datetime, timedelta
-from pykrx import stock
 from pytz import timezone, utc
 import plotly.express as px
-import os
-import plotly.graph_objects as go
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
 
@@ -25,7 +22,7 @@ def get_bs(url):
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
     return bs4.BeautifulSoup(requests.get(url, headers=headers).text, "lxml")
 
-tab1, tab5, tab6 = st.tabs(["Fear and Greed Index", "Waterfall", "Bond Yield"])
+tab1, tab6 = st.tabs(["Fear and Greed Index", "Bond Yield"])
 
 with tab1:
     response = get_bs(url)
@@ -78,66 +75,6 @@ with tab1:
     )
     components.html(line, height=800)
 
-# KOSPI Waterfall
-with tab5:
-    KST = timezone('Asia/Seoul')
-    now = datetime.utcnow()
-    SeoulTime = utc.localize(now).astimezone(KST).strftime('%Y%m%d')
-
-    # Multi-ticker and multi-source fallback strategy
-    tickers = ['1001', '코스피', 'KOSPI']
-    df = None
-    last_error = ""
-
-    for ticker in tickers:
-        try:
-            # Try fundamental first
-            df = stock.get_index_fundamental('20020101', SeoulTime, ticker)
-            if df is not None and not df.empty:
-                break
-            # Try ohlcv if fundamental is empty
-            df = stock.get_index_ohlcv_by_date('20020101', SeoulTime, ticker)
-            if df is not None and not df.empty:
-                break
-        except Exception as e:
-            last_error = str(e)
-            continue
-    
-    if df is not None and not df.empty:
-        df = df.reset_index()
-        # Positional indexing for name-agnostic stability
-        if len(df.columns) >= 2:
-            df1 = df.iloc[:, [0, 1]].copy()
-            df1.columns = ['날짜', '종가']
-            df2 = df1[~df1['날짜'].dt.strftime('%Y-%m').duplicated()].copy()
-        else:
-            st.error(f"데이터 구조가 올바르지 않습니다. (Columns: {df.columns.tolist()})")
-            st.stop()
-    else:
-        st.warning(f"KOSPI 데이터를 수집할 수 없습니다. (Tickers tried: {tickers})")
-        if last_error:
-            st.info(f"상세 오류: {last_error}")
-        st.stop()
-
-    df2 = pd.concat([df2, df1.tail(1)])
-    df2['pct'] = df2['종가'].pct_change(periods=1, axis=0)
-    df2['diff'] = df2['종가'].diff()
-
-    fig = go.Figure(go.Waterfall(
-        name = "KOSPI", orientation = "v",
-        measure = ["relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", "relative", ],
-        x = df2['날짜'],
-        textposition = "outside",
-        text = df2['종가'],
-        y = df2['diff'],
-        connector = {"line":{"color":"rgb(63, 63, 63)"}},
-    ))
-
-    fig.update_xaxes(dtick="M12")
-    fig.update_xaxes(showgrid=True, minor_showgrid=True, gridwidth=1, griddash='dash', gridcolor='LightPink')
-
-    st.plotly_chart(fig, use_container_width=True)
-
 # Bond Yield
 with tab6:
     KST = timezone('Asia/Seoul')
@@ -176,4 +113,3 @@ with tab6:
     fig.update_yaxes(showspikes=True, spikecolor="orange", spikethickness=1)
 
     st.plotly_chart(fig, use_container_width=True)
-
