@@ -128,6 +128,23 @@ with tab6:
         # Ensure data is sorted
         df_tot = df_tot.sort_values(by='TIME')
 
+        # Filter data: Monthly for past months, Daily for current month
+        current_month_start = SeoulTime.replace(day=1, hour=0, minute=0, second=0, microsecond=0).replace(tzinfo=None)
+
+        df_current = df_tot[df_tot['TIME'] >= current_month_start]
+        df_past = df_tot[df_tot['TIME'] < current_month_start]
+
+        if not df_past.empty:
+            df_past = df_past.copy()
+            df_past['Month'] = df_past['TIME'].dt.to_period('M')
+            max_dates = df_past.groupby(['ITEM_NAME1', 'Month'])['TIME'].max().reset_index()
+            df_past_filtered = pd.merge(df_past, max_dates, on=['ITEM_NAME1', 'Month', 'TIME'], how='inner')
+            df_past_filtered = df_past_filtered.drop(columns=['Month'])
+
+            df_tot = pd.concat([df_past_filtered, df_current]).sort_values(by='TIME')
+        else:
+            df_tot = df_current.sort_values(by='TIME')
+
     # Prepare data for Pyecharts
     unique_dates = sorted(df_tot['TIME'].unique()) if not df_tot.empty else []
     x_axis = [d.strftime('%Y-%m-%d') for d in unique_dates]
