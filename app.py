@@ -11,6 +11,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from pytz import timezone, utc
 import plotly.express as px
+from db_handler import BondDBHandler
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
 
@@ -92,26 +93,43 @@ with tab6:
                '010300000': '817Y002',
                }
 
-    df_tot = pd.DataFrame()
+    db = BondDBHandler()
 
     #금리
     for (bondcd, bondcd1) in zip(list(bond_cd.values()), list(bond_cd.keys())):
-        url = f'http://ecos.bok.or.kr/api/StatisticSearch/967SFAC1NLQO1Z31HUMX/json/kr/1/10000/{bondcd}/D/20020101/{nowSeo}/{bondcd1}'
+        last_date = db.get_last_date(bondcd, bondcd1)
 
-        res = requests.get(url)
-        resJsn = json.loads(res.text)['StatisticSearch']['row']
+        if last_date:
+            start_date_obj = datetime.strptime(last_date, '%Y%m%d') + timedelta(days=1)
+            start_date_str = start_date_obj.strftime('%Y%m%d')
+        else:
+            start_date_str = '20020101'
 
-        df = pd.DataFrame(resJsn)
-        df['DATA_VALUE'] = df['DATA_VALUE'].astype(float)
-        df['TIME'] = pd.to_datetime(df['TIME'])
+        if start_date_str <= nowSeo:
+            url = f'http://ecos.bok.or.kr/api/StatisticSearch/967SFAC1NLQO1Z31HUMX/json/kr/1/10000/{bondcd}/D/{start_date_str}/{nowSeo}/{bondcd1}'
 
-        df_tot = pd.concat([df_tot, df])
+            try:
+                res = requests.get(url)
+                data = json.loads(res.text)
+                if 'StatisticSearch' in data and 'row' in data['StatisticSearch']:
+                    resJsn = data['StatisticSearch']['row']
+                    df = pd.DataFrame(resJsn)
+                    db.save_data(df)
+            except Exception as e:
+                print(f"Error fetching data for {bondcd}/{bondcd1}: {e}")
 
-    # Ensure data is sorted
-    df_tot = df_tot.sort_values(by='TIME')
+    # Load all data from DB
+    df_tot = db.get_all_data(None, None)
+
+    if not df_tot.empty:
+        df_tot['DATA_VALUE'] = df_tot['DATA_VALUE'].astype(float)
+        df_tot['TIME'] = pd.to_datetime(df_tot['TIME'])
+
+        # Ensure data is sorted
+        df_tot = df_tot.sort_values(by='TIME')
 
     # Prepare data for Pyecharts
-    unique_dates = sorted(df_tot['TIME'].unique())
+    unique_dates = sorted(df_tot['TIME'].unique()) if not df_tot.empty else []
     x_axis = [d.strftime('%Y-%m-%d') for d in unique_dates]
 
     line = Line(init_opts=opts.InitOpts(width="100%", height="600px"))
