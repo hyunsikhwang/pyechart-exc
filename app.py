@@ -244,8 +244,8 @@ with tab1:
     fetched = get_fear_greed_data()
     if fetched:
         st.session_state["fear_greed_data"] = fetched
-    elif "fear_greed_data" not in st.session_state:
-        st.session_state["fear_greed_data"] = ([], [])
+    fear_data = st.session_state.get("fear_greed_data", ([], []))
+    fear_greed_chart = build_fear_greed_chart(*fear_data)
 
     fear_data = st.session_state["fear_greed_data"]
     if "fear_greed_chart" not in st.session_state or fetched:
