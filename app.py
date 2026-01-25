@@ -25,6 +25,64 @@ def get_bs(url):
 
 tab1, tab6 = st.tabs(["Fear and Greed Index", "Bond Yield"])
 
+components.html(
+    """
+    <script>
+      (function () {
+        const runResize = () => {
+          const iframes = window.parent.document.querySelectorAll("iframe");
+          iframes.forEach((iframe) => {
+            try {
+              if (iframe.contentWindow) {
+                iframe.contentWindow.dispatchEvent(new Event("resize"));
+                if (iframe.contentWindow.echarts) {
+                  const echarts = iframe.contentWindow.echarts;
+                  const chartEls = iframe.contentWindow.document.querySelectorAll("div");
+                  chartEls.forEach((el) => {
+                    const instance = echarts.getInstanceByDom(el);
+                    if (instance) {
+                      instance.resize();
+                    }
+                  });
+                }
+              }
+            } catch (err) {
+              // Ignore cross-frame access errors.
+            }
+          });
+        };
+
+        const bindTabs = () => {
+          const doc = window.parent.document;
+          const tabs = doc.querySelectorAll('[role="tab"]');
+          tabs.forEach((tab) => {
+            if (!tab.dataset.resizeBound) {
+              tab.dataset.resizeBound = "true";
+              tab.addEventListener("click", () => setTimeout(runResize, 100));
+            }
+          });
+        };
+
+        const observeTabs = () => {
+          const doc = window.parent.document;
+          const observer = new MutationObserver(() => bindTabs());
+          observer.observe(doc.body, { childList: true, subtree: true });
+          bindTabs();
+        };
+
+        document.addEventListener("visibilitychange", () => {
+          if (!document.hidden) {
+            runResize();
+          }
+        });
+        window.addEventListener("resize", runResize);
+        observeTabs();
+      })();
+    </script>
+    """,
+    height=0,
+)
+
 with tab1:
     response = get_bs(url)
 
