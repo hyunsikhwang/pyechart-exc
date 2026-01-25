@@ -14,6 +14,14 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
 
+# Session state initialization
+if "fear_greed_data" not in st.session_state:
+    st.session_state["fear_greed_data"] = ([], [])
+if "bond_yield_df" not in st.session_state:
+    st.session_state["bond_yield_df"] = pd.DataFrame()
+if "bond_data_loading_triggered" not in st.session_state:
+    st.session_state["bond_data_loading_triggered"] = False
+
 st.header("pyechart")
 
 url = 'https://production.dataviz.cnn.io/index/fearandgreed/graphdata'
@@ -262,26 +270,38 @@ def build_bond_yield_chart(df_tot):
 
 
 with tab1:
-    fetched = get_fear_greed_data()
-    if fetched:
-        st.session_state["fear_greed_data"] = fetched
-    fear_data = st.session_state.get("fear_greed_data", ([], []))
-    fear_greed_chart = build_fear_greed_chart(*fear_data)
-
-    fear_data = st.session_state["fear_greed_data"]
-    if "fear_greed_chart" not in st.session_state or fetched:
-        st.session_state["fear_greed_chart"] = build_fear_greed_chart(*fear_data)
-
-    st_pyecharts(fear_greed_chart, height="800px", key="fear-greed-chart")
+    # Always try to fetch F&G data if it's empty
+    if not st.session_state["fear_greed_data"][0]:
+        with st.spinner("Fetching Fear and Greed Index..."):
+            fetched = get_fear_greed_data()
+            if fetched:
+                st.session_state["fear_greed_data"] = fetched
+    
+    x_axis, y_axis = st.session_state["fear_greed_data"]
+    if x_axis and y_axis:
+        fear_greed_chart = build_fear_greed_chart(x_axis, y_axis)
+        st_pyecharts(fear_greed_chart, height="800px", key="fear-greed-chart")
+    else:
+        st.error("Failed to load Fear and Greed Index data.")
 
 with tab6:
-    df_tot = get_bond_yield_data()
-    if not df_tot.empty:
-        st.session_state["bond_yield_df"] = df_tot
-    elif "bond_yield_df" not in st.session_state:
-        st.session_state["bond_yield_df"] = df_tot
+    st.subheader("Bond Yield Data")
+    
+    # Check if we should load data
+    load_button = st.button("Refresh Bond Data")
+    
+    if load_button or not st.session_state["bond_data_loading_triggered"]:
+        st.session_state["bond_data_loading_triggered"] = True
+        with st.spinner("Loading Bond Yield data from ECOS and Database..."):
+            df_tot = get_bond_yield_data()
+            if not df_tot.empty:
+                st.session_state["bond_yield_df"] = df_tot
+            else:
+                st.warning("No bond yield data found.")
 
     bond_df = st.session_state["bond_yield_df"]
-    bond_yield_chart = build_bond_yield_chart(bond_df)
-
-    st_pyecharts(bond_yield_chart, height="600px", key="bond-yield-chart")
+    if not bond_df.empty:
+        bond_yield_chart = build_bond_yield_chart(bond_df)
+        st_pyecharts(bond_yield_chart, height="600px", key="bond-yield-chart")
+    else:
+        st.info("Click 'Refresh Bond Data' to load and display the chart.")
