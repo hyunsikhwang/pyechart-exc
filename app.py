@@ -3,14 +3,12 @@ from streamlit_echarts import st_pyecharts
 import streamlit as st
 from pyecharts.charts import Line
 from pyecharts.commons.utils import JsCode
-import streamlit.components.v1 as components
 import requests
 import bs4
 import json
 import pandas as pd
 from datetime import datetime, timedelta
 from pytz import timezone, utc
-import plotly.express as px
 from db_handler import BondDBHandler
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
@@ -23,6 +21,39 @@ def get_bs(url):
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
     return bs4.BeautifulSoup(requests.get(url, headers=headers).text, "lxml")
 
+def get_fear_greed_data():
+    try:
+        response = get_bs(url)
+        x_axis = []
+        y_axis = []
+        for itm in json.loads(response.text)['fear_and_greed_historical']['data']:
+            x_axis.append(datetime.fromtimestamp(itm['x'] / 1000).strftime('%Y-%m-%d'))
+            y_axis.append(itm['y'])
+        return x_axis, y_axis
+    except (json.JSONDecodeError, KeyError, requests.RequestException):
+        return None
+
+
+def build_fear_greed_chart(x_axis, y_axis):
+    line = Line(init_opts=opts.InitOpts(width="100%", height="800px"))
+    if not x_axis or not y_axis:
+        return line.set_global_opts(title_opts=opts.TitleOpts(title="CNN Fear and Greed Index"))
+    return (
+        line.add_xaxis(x_axis)
+        .add_yaxis(
+            'Index',
+            y_axis,
+            markpoint_opts=opts.MarkPointOpts(
+                data=[opts.MarkPointItem(name="Current", type_=None, coord=[x_axis[-1], y_axis[-1]], value=f"{y_axis[-1]:.1f}")]
+            ),
+            is_smooth=True,
+            is_step=False,
+            label_opts=opts.LabelOpts(
+                formatter=JsCode(
+                    "function(params){return params.value[1].toFixed(1);}"
+                )
+            ),
+            markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
 tab1, tab6 = st.tabs(["Fear and Greed Index", "Bond Yield"])
 
 components.html(
@@ -111,7 +142,8 @@ with tab1:
                 ),
                 markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
         )
-        .set_series_opts(markarea_opts=opts.MarkAreaOpts(
+        .set_series_opts(
+            markarea_opts=opts.MarkAreaOpts(
                 data=[
                     opts.MarkAreaItem(name="EXTREME FEAR", y=(0, 25), itemstyle_opts=opts.ItemStyleOpts(color="red", opacity=0.2)),
                     opts.MarkAreaItem(name="FEAR", y=(25, 45), itemstyle_opts=opts.ItemStyleOpts(color="orange", opacity=0.2)),
@@ -119,7 +151,8 @@ with tab1:
                     opts.MarkAreaItem(name="GREED", y=(55, 75), itemstyle_opts=opts.ItemStyleOpts(color="green", opacity=0.2)),
                     opts.MarkAreaItem(name="EXTREME GREED", y=(75, 100), itemstyle_opts=opts.ItemStyleOpts(color="blue", opacity=0.2)),
                 ],
-        ))
+            )
+        )
         .set_global_opts(
             title_opts=opts.TitleOpts(title="CNN Fear and Greed Index"),
             tooltip_opts=opts.TooltipOpts(
@@ -127,33 +160,30 @@ with tab1:
                     "function (params) {return params.value[0] + '<br>' + params.value[1].toFixed(1);}"
                 )
             ),
-            xaxis_opts=opts.AxisOpts(interval=0,
-                                    boundary_gap=False,)
+            xaxis_opts=opts.AxisOpts(interval=0, boundary_gap=False),
         )
-        .render_embed()
     )
-    components.html(line, height=800)
 
-# Bond Yield
-with tab6:
+
+def get_bond_yield_data():
     KST = timezone('Asia/Seoul')
     now = datetime.utcnow()
     SeoulTime = utc.localize(now).astimezone(KST)
     nowSeo = SeoulTime.strftime('%Y%m%d')
 
-    bond_cd = {'0101000': '722Y001',
-               '010190000': '817Y002',
-               '010200000': '817Y002',
-               '010210000': '817Y002',
-               '010220000': '817Y002',
-               '010230000': '817Y002',
-               '010240000': '817Y002',
-               '010300000': '817Y002',
-               }
+    bond_cd = {
+        '0101000': '722Y001',
+        '010190000': '817Y002',
+        '010200000': '817Y002',
+        '010210000': '817Y002',
+        '010220000': '817Y002',
+        '010230000': '817Y002',
+        '010240000': '817Y002',
+        '010300000': '817Y002',
+    }
 
     db = BondDBHandler()
 
-    #금리
     for (bondcd, bondcd1) in zip(list(bond_cd.values()), list(bond_cd.keys())):
         last_date = db.get_last_date(bondcd, bondcd1)
 
@@ -173,20 +203,16 @@ with tab6:
                     resJsn = data['StatisticSearch']['row']
                     df = pd.DataFrame(resJsn)
                     db.save_data(df)
-            except Exception as e:
-                print(f"Error fetching data for {bondcd}/{bondcd1}: {e}")
+            except requests.RequestException as exc:
+                print(f"Error fetching data for {bondcd}/{bondcd1}: {exc}")
 
-    # Load all data from DB
     df_tot = db.get_all_data(None, None)
 
     if not df_tot.empty:
         df_tot['DATA_VALUE'] = df_tot['DATA_VALUE'].astype(float)
         df_tot['TIME'] = pd.to_datetime(df_tot['TIME'])
-
-        # Ensure data is sorted
         df_tot = df_tot.sort_values(by='TIME')
 
-        # Filter data: Monthly for past months, Daily for current month
         current_month_start = SeoulTime.replace(day=1, hour=0, minute=0, second=0, microsecond=0).replace(tzinfo=None)
 
         df_current = df_tot[df_tot['TIME'] >= current_month_start]
@@ -203,11 +229,16 @@ with tab6:
         else:
             df_tot = df_current.sort_values(by='TIME')
 
-    # Prepare data for Pyecharts
-    unique_dates = sorted(df_tot['TIME'].unique()) if not df_tot.empty else []
-    x_axis = [d.strftime('%Y-%m-%d') for d in unique_dates]
+    return df_tot
 
+
+def build_bond_yield_chart(df_tot):
     line = Line(init_opts=opts.InitOpts(width="100%", height="600px"))
+    if df_tot.empty:
+        return line.set_global_opts(title_opts=opts.TitleOpts(title="Bond Yields"))
+
+    unique_dates = sorted(df_tot['TIME'].unique())
+    x_axis = [d.strftime('%Y-%m-%d') for d in unique_dates]
     line.add_xaxis(x_axis)
 
     for bond_name in df_tot['ITEM_NAME1'].unique():
@@ -221,10 +252,10 @@ with tab6:
             is_smooth=True,
             is_symbol_show=False,
             label_opts=opts.LabelOpts(is_show=False),
-            is_connect_nones=True
+            is_connect_nones=True,
         )
 
-    line.set_global_opts(
+    return line.set_global_opts(
         title_opts=opts.TitleOpts(title="Bond Yields"),
         tooltip_opts=opts.TooltipOpts(trigger="axis"),
         xaxis_opts=opts.AxisOpts(type_="category", boundary_gap=False),
@@ -233,4 +264,35 @@ with tab6:
         legend_opts=opts.LegendOpts(pos_top="5%"),
     )
 
-    st_pyecharts(line, height="600px")
+
+tab_labels = ["Fear and Greed Index", "Bond Yield"]
+active_tab = st.radio("Tabs", tab_labels, key="active_tab", horizontal=True, label_visibility="collapsed")
+
+if active_tab == "Fear and Greed Index":
+    fetched = get_fear_greed_data()
+    if fetched:
+        st.session_state["fear_greed_data"] = fetched
+    elif "fear_greed_data" not in st.session_state:
+        st.session_state["fear_greed_data"] = ([], [])
+
+    fear_data = st.session_state["fear_greed_data"]
+    if (
+        "fear_greed_chart" not in st.session_state
+        or fetched
+    ):
+        st.session_state["fear_greed_chart"] = build_fear_greed_chart(*fear_data)
+
+    st_pyecharts(st.session_state["fear_greed_chart"], height="800px", key="fear-greed-chart")
+
+if active_tab == "Bond Yield":
+    df_tot = get_bond_yield_data()
+    if not df_tot.empty:
+        st.session_state["bond_yield_df"] = df_tot
+    elif "bond_yield_df" not in st.session_state:
+        st.session_state["bond_yield_df"] = df_tot
+
+    bond_df = st.session_state["bond_yield_df"]
+    if "bond_yield_chart" not in st.session_state or not df_tot.empty:
+        st.session_state["bond_yield_chart"] = build_bond_yield_chart(bond_df)
+
+    st_pyecharts(st.session_state["bond_yield_chart"], height="600px", key="bond-yield-chart")
