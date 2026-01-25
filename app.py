@@ -248,7 +248,8 @@ with tab1:
         st.session_state["fear_greed_data"] = ([], [])
 
     fear_data = st.session_state["fear_greed_data"]
-    fear_greed_chart = build_fear_greed_chart(*fear_data)
+    if "fear_greed_chart" not in st.session_state or fetched:
+        st.session_state["fear_greed_chart"] = build_fear_greed_chart(*fear_data)
 
     st_pyecharts(fear_greed_chart, height="800px", key="fear-greed-chart")
 
