@@ -10,6 +10,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from pytz import timezone, utc
 from db_handler import BondDBHandler
+import streamlit.components.v1 as components
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
 
@@ -138,56 +139,6 @@ components.html(
     height=0,
 )
 
-with tab1:
-    response = get_bs(url)
-
-    x_axis = []
-    y_axis = []
-
-    line = Line()
-
-    for itm in json.loads(response.text)['fear_and_greed_historical']['data']:
-        x_axis.append(datetime.fromtimestamp(itm['x']/1000).strftime('%Y-%m-%d'))
-        y_axis.append(itm['y'])
-
-    line = (
-        Line(init_opts=opts.InitOpts(width="100%", height="800px"))
-        .add_xaxis(x_axis)
-        .add_yaxis('Index',
-                y_axis,
-                markpoint_opts=opts.MarkPointOpts(
-                    data=[opts.MarkPointItem(name="Current", type_=None, coord=[x_axis[-1], y_axis[-1]], value=f"{y_axis[-1]:.1f}")]),
-                is_smooth=True,
-                is_step=False,
-                label_opts=opts.LabelOpts(
-                        formatter=JsCode(
-                            "function(params){return params.value[1].toFixed(1);}"
-                        )
-                ),
-                markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
-        )
-        .set_series_opts(
-            markarea_opts=opts.MarkAreaOpts(
-                data=[
-                    opts.MarkAreaItem(name="EXTREME FEAR", y=(0, 25), itemstyle_opts=opts.ItemStyleOpts(color="red", opacity=0.2)),
-                    opts.MarkAreaItem(name="FEAR", y=(25, 45), itemstyle_opts=opts.ItemStyleOpts(color="orange", opacity=0.2)),
-                    opts.MarkAreaItem(name="NEUTRAL", y=(45, 55), itemstyle_opts=opts.ItemStyleOpts(color="yellow", opacity=0.2)),
-                    opts.MarkAreaItem(name="GREED", y=(55, 75), itemstyle_opts=opts.ItemStyleOpts(color="green", opacity=0.2)),
-                    opts.MarkAreaItem(name="EXTREME GREED", y=(75, 100), itemstyle_opts=opts.ItemStyleOpts(color="blue", opacity=0.2)),
-                ],
-            )
-        )
-        .set_global_opts(
-            title_opts=opts.TitleOpts(title="CNN Fear and Greed Index"),
-            tooltip_opts=opts.TooltipOpts(
-                formatter=JsCode(
-                    "function (params) {return params.value[0] + '<br>' + params.value[1].toFixed(1);}"
-                )
-            ),
-            xaxis_opts=opts.AxisOpts(interval=0, boundary_gap=False),
-        )
-    )
-
 
 def get_bond_yield_data():
     KST = timezone('Asia/Seoul')
@@ -227,7 +178,7 @@ def get_bond_yield_data():
                     resJsn = data['StatisticSearch']['row']
                     df = pd.DataFrame(resJsn)
                     db.save_data(df)
-            except requests.RequestException as exc:
+            except (requests.RequestException, json.JSONDecodeError) as exc:
                 print(f"Error fetching data for {bondcd}/{bondcd1}: {exc}")
 
     df_tot = db.get_all_data(None, None)
@@ -289,10 +240,7 @@ def build_bond_yield_chart(df_tot):
     )
 
 
-tab_labels = ["Fear and Greed Index", "Bond Yield"]
-active_tab = st.radio("Tabs", tab_labels, key="active_tab", horizontal=True, label_visibility="collapsed")
-
-if active_tab == "Fear and Greed Index":
+with tab1:
     fetched = get_fear_greed_data()
     if fetched:
         st.session_state["fear_greed_data"] = fetched
@@ -300,15 +248,11 @@ if active_tab == "Fear and Greed Index":
         st.session_state["fear_greed_data"] = ([], [])
 
     fear_data = st.session_state["fear_greed_data"]
-    if (
-        "fear_greed_chart" not in st.session_state
-        or fetched
-    ):
-        st.session_state["fear_greed_chart"] = build_fear_greed_chart(*fear_data)
+    fear_greed_chart = build_fear_greed_chart(*fear_data)
 
-    st_pyecharts(st.session_state["fear_greed_chart"], height="800px", key="fear-greed-chart")
+    st_pyecharts(fear_greed_chart, height="800px", key="fear-greed-chart")
 
-if active_tab == "Bond Yield":
+with tab6:
     df_tot = get_bond_yield_data()
     if not df_tot.empty:
         st.session_state["bond_yield_df"] = df_tot
@@ -316,7 +260,6 @@ if active_tab == "Bond Yield":
         st.session_state["bond_yield_df"] = df_tot
 
     bond_df = st.session_state["bond_yield_df"]
-    if "bond_yield_chart" not in st.session_state or not df_tot.empty:
-        st.session_state["bond_yield_chart"] = build_bond_yield_chart(bond_df)
+    bond_yield_chart = build_bond_yield_chart(bond_df)
 
-    st_pyecharts(st.session_state["bond_yield_chart"], height="600px", key="bond-yield-chart")
+    st_pyecharts(bond_yield_chart, height="600px", key="bond-yield-chart")
