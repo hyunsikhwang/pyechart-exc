@@ -247,13 +247,20 @@ with tab1:
     fear_data = st.session_state.get("fear_greed_data", ([], []))
     fear_greed_chart = build_fear_greed_chart(*fear_data)
 
+    fear_data = st.session_state["fear_greed_data"]
+    if "fear_greed_chart" not in st.session_state or fetched:
+        st.session_state["fear_greed_chart"] = build_fear_greed_chart(*fear_data)
+
     st_pyecharts(fear_greed_chart, height="800px", key="fear-greed-chart")
 
 with tab6:
     df_tot = get_bond_yield_data()
     if not df_tot.empty:
         st.session_state["bond_yield_df"] = df_tot
-    bond_df = st.session_state.get("bond_yield_df", df_tot)
+    elif "bond_yield_df" not in st.session_state:
+        st.session_state["bond_yield_df"] = df_tot
+
+    bond_df = st.session_state["bond_yield_df"]
     bond_yield_chart = build_bond_yield_chart(bond_df)
 
     st_pyecharts(bond_yield_chart, height="600px", key="bond-yield-chart")
