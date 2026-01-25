@@ -54,6 +54,30 @@ def build_fear_greed_chart(x_axis, y_axis):
                 )
             ),
             markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
+        )
+        .set_series_opts(
+            markarea_opts=opts.MarkAreaOpts(
+                data=[
+                    opts.MarkAreaItem(name="EXTREME FEAR", y=(0, 25), itemstyle_opts=opts.ItemStyleOpts(color="red", opacity=0.2)),
+                    opts.MarkAreaItem(name="FEAR", y=(25, 45), itemstyle_opts=opts.ItemStyleOpts(color="orange", opacity=0.2)),
+                    opts.MarkAreaItem(name="NEUTRAL", y=(45, 55), itemstyle_opts=opts.ItemStyleOpts(color="yellow", opacity=0.2)),
+                    opts.MarkAreaItem(name="GREED", y=(55, 75), itemstyle_opts=opts.ItemStyleOpts(color="green", opacity=0.2)),
+                    opts.MarkAreaItem(name="EXTREME GREED", y=(75, 100), itemstyle_opts=opts.ItemStyleOpts(color="blue", opacity=0.2)),
+                ],
+            )
+        )
+        .set_global_opts(
+            title_opts=opts.TitleOpts(title="CNN Fear and Greed Index"),
+            tooltip_opts=opts.TooltipOpts(
+                formatter=JsCode(
+                    "function (params) {return params.value[0] + '<br>' + params.value[1].toFixed(1);}"
+                )
+            ),
+            xaxis_opts=opts.AxisOpts(interval=0, boundary_gap=False),
+        )
+    )
+
+
 tab1, tab6 = st.tabs(["Fear and Greed Index", "Bond Yield"])
 
 components.html(
