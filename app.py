@@ -168,7 +168,7 @@ components.html(
 )
 
 
-@st.cache_data(ttl=600)
+# Removed cache to prevent stale empty data and enable manual refresh
 def get_bond_yield_data():
     KST = timezone('Asia/Seoul')
     now = datetime.utcnow()
@@ -287,21 +287,33 @@ with tab1:
 with tab6:
     st.subheader("Bond Yield Data")
     
-    # Check if we should load data
-    load_button = st.button("Refresh Bond Data")
-    
-    if load_button or not st.session_state["bond_data_loading_triggered"]:
-        st.session_state["bond_data_loading_triggered"] = True
-        with st.spinner("Loading Bond Yield data from ECOS and Database..."):
-            df_tot = get_bond_yield_data()
-            if not df_tot.empty:
-                st.session_state["bond_yield_df"] = df_tot
-            else:
-                st.warning("No bond yield data found.")
-
-    bond_df = st.session_state["bond_yield_df"]
-    if not bond_df.empty:
-        bond_yield_chart = build_bond_yield_chart(bond_df)
-        st_pyecharts(bond_yield_chart, height="600px", key="bond-yield-chart")
+    # 1. Provide a clear button for loading/refreshing
+    if st.session_state["bond_yield_df"].empty:
+        st.info("Bond yield data is not loaded yet to speed up initial page load.")
+        if st.button("Load Bond Data"):
+            st.session_state["bond_data_loading_triggered"] = True
+            with st.spinner("Fetching data from ECOS... This may take a while."):
+                df_tot = get_bond_yield_data()
+                if not df_tot.empty:
+                    st.session_state["bond_yield_df"] = df_tot
+                    st.success("Successfully loaded bond yield data!")
+                    st.rerun()
+                else:
+                    st.error("Failed to load bond yield data. Please check your API connectivity.")
     else:
-        st.info("Click 'Refresh Bond Data' to load and display the chart.")
+        if st.button("Refresh Bond Data"):
+            with st.spinner("Refreshing bond yield data..."):
+                df_tot = get_bond_yield_data()
+                if not df_tot.empty:
+                    st.session_state["bond_yield_df"] = df_tot
+                    st.success("Successfully refreshed!")
+                    st.rerun()
+                else:
+                    st.warning("Refresh returned no data. Keeping existing data.")
+
+        # 2. Display the chart if data exists
+        bond_df = st.session_state["bond_yield_df"]
+        if not bond_df.empty:
+            with st.spinner("Building chart..."):
+                bond_yield_chart = build_bond_yield_chart(bond_df)
+                st_pyecharts(bond_yield_chart, height="600px", key="bond-yield-chart")
