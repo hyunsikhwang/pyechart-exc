@@ -10,6 +10,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from pytz import timezone, utc
 from db_handler import BondDBHandler
+import streamlit.components.v1 as components
 
 st.set_page_config(page_title="CNN Fear and Greed Index", layout="wide", page_icon="random")
 
