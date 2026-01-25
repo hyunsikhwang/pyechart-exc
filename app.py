@@ -22,6 +22,7 @@ def get_bs(url):
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
     return bs4.BeautifulSoup(requests.get(url, headers=headers).text, "lxml")
 
+@st.cache_data(ttl=600)
 def get_fear_greed_data():
     try:
         response = get_bs(url)
@@ -90,7 +91,10 @@ components.html(
           iframes.forEach((iframe) => {
             try {
               if (iframe.contentWindow) {
+                // Trigger standard window resize
                 iframe.contentWindow.dispatchEvent(new Event("resize"));
+                
+                // If ECharts is present, force resize all instances
                 if (iframe.contentWindow.echarts) {
                   const echarts = iframe.contentWindow.echarts;
                   const chartEls = iframe.contentWindow.document.querySelectorAll("div");
@@ -108,31 +112,47 @@ components.html(
           });
         };
 
-        const bindTabs = () => {
+        const bindEvents = () => {
           const doc = window.parent.document;
-          const tabs = doc.querySelectorAll('[role="tab"]');
-          tabs.forEach((tab) => {
-            if (!tab.dataset.resizeBound) {
-              tab.dataset.resizeBound = "true";
-              tab.addEventListener("click", () => setTimeout(runResize, 100));
-            }
+          
+          // Modern Streamlit tab selectors
+          const tabSelectors = [
+            '[role="tab"]', 
+            'button[data-baseweb="tab"]',
+            '.st-ae' // Common internal class for tabs
+          ];
+          
+          tabSelectors.forEach(selector => {
+            const elements = doc.querySelectorAll(selector);
+            elements.forEach((el) => {
+              if (!el.dataset.resizeBound) {
+                el.dataset.resizeBound = "true";
+                el.addEventListener("click", () => {
+                  // Multiple triggers for reliability
+                  setTimeout(runResize, 100);
+                  setTimeout(runResize, 300);
+                  setTimeout(runResize, 600);
+                });
+              }
+            });
           });
         };
 
-        const observeTabs = () => {
+        const observeChanges = () => {
           const doc = window.parent.document;
-          const observer = new MutationObserver(() => bindTabs());
+          const observer = new MutationObserver(() => bindEvents());
           observer.observe(doc.body, { childList: true, subtree: true });
-          bindTabs();
+          bindEvents();
         };
 
+        // Fallback: Run once on visibility change or click anywhere
         document.addEventListener("visibilitychange", () => {
-          if (!document.hidden) {
-            runResize();
-          }
+          if (!document.hidden) runResize();
         });
         window.addEventListener("resize", runResize);
-        observeTabs();
+        window.parent.addEventListener("click", () => setTimeout(runResize, 300));
+        
+        observeChanges();
       })();
     </script>
     """,
@@ -140,6 +160,7 @@ components.html(
 )
 
 
+@st.cache_data(ttl=600)
 def get_bond_yield_data():
     KST = timezone('Asia/Seoul')
     now = datetime.utcnow()
