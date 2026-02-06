@@ -90,18 +90,59 @@ def build_fear_greed_chart(x_axis, y_axis):
 
 def build_stacked_bar_chart():
     categories = ["treaty1", "treaty2", "treaty3", "treaty4", "treaty5"]
-    # Data provided by the user
-    data1 = [10, 20, 30, 100, 50]
-    # Dummy data to demonstrate stacking
-    data2 = [15, 25, 20, 30, 40]
+    # Data provided by the user + extra categories
+    # Each treaty has at least one 0
+    data_a = [10, 20, 30, 100, 50]
+    data_b = [0, 15, 20, 30, 0]
+    data_c = [15, 0, 15, 40, 10]
+    data_d = [5, 10, 0, 20, 15]
+    data_e = [8, 5, 12, 0, 5]
     
     bar = Bar(init_opts=opts.InitOpts(width="100%", height="600px"))
     bar.add_xaxis(categories)
-    bar.add_yaxis("Category A", data1, stack="stack1")
-    bar.add_yaxis("Category B", data2, stack="stack1")
+    bar.add_yaxis("Category A", data_a, stack="stack1")
+    bar.add_yaxis("Category B", data_b, stack="stack1")
+    bar.add_yaxis("Category C", data_c, stack="stack1")
+    bar.add_yaxis("Category D", data_d, stack="stack1")
+    bar.add_yaxis("Category E", data_e, stack="stack1")
+    
+    # Custom JS Tooltip logic
+    tooltip_formatter = JsCode(
+        """
+        function (params) {
+            if (!params || params.length === 0) return '';
+            var res = '<b>' + params[0].name + '</b><br/>';
+            
+            // Filter out 0 values and sort descending
+            var filtered = params.filter(function (item) {
+                // pyecharts might pass value as an array [x, y] or just y depending on config
+                var val = Array.isArray(item.value) ? item.value[1] : item.value;
+                return val !== 0 && val !== undefined && val !== null;
+            });
+            
+            filtered.sort(function (a, b) {
+                var valA = Array.isArray(a.value) ? a.value[1] : a.value;
+                var valB = Array.isArray(b.value) ? b.value[1] : b.value;
+                return valB - valA;
+            });
+            
+            filtered.forEach(function (item) {
+                var val = Array.isArray(item.value) ? item.value[1] : item.value;
+                res += item.marker + item.seriesName + ': ' + val + '<br/>';
+            });
+            
+            return res;
+        }
+        """
+    )
+    
     bar.set_global_opts(
-        title_opts=opts.TitleOpts(title="Stacked Bar Chart"),
-        tooltip_opts=opts.TooltipOpts(trigger="axis", axis_pointer_type="shadow"),
+        title_opts=opts.TitleOpts(title="Enhanced Stacked Bar Chart"),
+        tooltip_opts=opts.TooltipOpts(
+            trigger="axis", 
+            axis_pointer_type="shadow",
+            formatter=tooltip_formatter
+        ),
         legend_opts=opts.LegendOpts(pos_top="5%"),
         xaxis_opts=opts.AxisOpts(name="Treaty"),
         yaxis_opts=opts.AxisOpts(name="Value"),
