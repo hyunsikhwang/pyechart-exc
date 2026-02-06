@@ -106,45 +106,29 @@ def build_stacked_bar_chart():
     bar.add_yaxis("Category D", data_d, stack="stack1")
     bar.add_yaxis("Category E", data_e, stack="stack1")
     
-    # Custom JS Tooltip logic - More robust version to prevent Component Error
     tooltip_formatter = JsCode(
-        """
-        function (params) {
+        """function (params) {
             if (!params) return "";
             var items = Array.isArray(params) ? params : [params];
             if (items.length === 0) return "";
-            
             var header = items[0].axisValue || items[0].name || "";
             var res = '<b>' + header + '</b><br/>';
-            
             var list = [];
             for (var i = 0; i < items.length; i++) {
                 var item = items[i];
                 if (!item) continue;
-                
                 var val = Array.isArray(item.value) ? item.value[1] : item.value;
                 if (val !== 0 && val !== undefined && val !== null) {
-                    list.push({
-                        marker: item.marker || "",
-                        seriesName: item.seriesName || "",
-                        value: val
-                    });
+                    list.push({marker: item.marker || "", seriesName: item.seriesName || "", value: val});
                 }
             }
-            
-            // Sort Descending
-            list.sort(function (a, b) {
-                return (b.value || 0) - (a.value || 0);
-            });
-            
+            list.sort(function (a, b) { return (b.value || 0) - (a.value || 0); });
             for (var j = 0; j < list.length; j++) {
                 var entry = list[j];
                 res += entry.marker + entry.seriesName + ': ' + entry.value + '<br/>';
             }
-            
             return res;
-        }
-        """
+        }"""
     )
     
     bar.set_global_opts(
@@ -397,7 +381,6 @@ components.html(
         observer.observe(window.parent.document.body, { childList: true, subtree: true });
         bindEvents();
         
-        // Initial run
         setTimeout(runResize, 1000);
       })();
     </script>
