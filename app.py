@@ -148,6 +148,17 @@ tab_labels = ["Fear and Greed Index", "Bond Yield", "Stacked Bar Chart"]
 st.markdown(
     """
     <style>
+      /* Hide radio controls; keep labels as tabs */
+      div[data-testid="stRadio"] input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+      }
+      div[data-testid="stRadio"] label > div:first-child {
+        display: none;
+      }
       div[data-testid="stRadio"] > div[role="radiogroup"] {
         display: flex;
         gap: 0.5rem;
@@ -165,6 +176,7 @@ st.markdown(
         color: #39414d;
         background: transparent;
         border: 1px solid transparent;
+        user-select: none;
       }
       div[data-testid="stRadio"] label:hover {
         background: #e9eef5;
