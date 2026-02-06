@@ -90,54 +90,17 @@ def build_fear_greed_chart(x_axis, y_axis):
 
 def build_stacked_bar_chart():
     categories = ["treaty1", "treaty2", "treaty3", "treaty4", "treaty5"]
-    # Data provided by the user + extra categories
-    # Each treaty has at least one 0
     data_a = [10, 20, 30, 100, 50]
-    data_b = [0, 15, 20, 30, 0]
-    data_c = [15, 0, 15, 40, 10]
-    data_d = [5, 10, 0, 20, 15]
-    data_e = [8, 5, 12, 0, 5]
+    data_b = [15, 25, 20, 30, 40]
     
     bar = Bar(init_opts=opts.InitOpts(width="100%", height="600px"))
     bar.add_xaxis(categories)
     bar.add_yaxis("Category A", data_a, stack="stack1")
     bar.add_yaxis("Category B", data_b, stack="stack1")
-    bar.add_yaxis("Category C", data_c, stack="stack1")
-    bar.add_yaxis("Category D", data_d, stack="stack1")
-    bar.add_yaxis("Category E", data_e, stack="stack1")
-    
-    tooltip_formatter = JsCode(
-        """function (params) {
-            if (!params) return "";
-            var items = Array.isArray(params) ? params : [params];
-            if (items.length === 0) return "";
-            var header = items[0].axisValue || items[0].name || "";
-            var res = '<b>' + header + '</b><br/>';
-            var list = [];
-            for (var i = 0; i < items.length; i++) {
-                var item = items[i];
-                if (!item) continue;
-                var val = Array.isArray(item.value) ? item.value[1] : item.value;
-                if (val !== 0 && val !== undefined && val !== null) {
-                    list.push({marker: item.marker || "", seriesName: item.seriesName || "", value: val});
-                }
-            }
-            list.sort(function (a, b) { return (b.value || 0) - (a.value || 0); });
-            for (var j = 0; j < list.length; j++) {
-                var entry = list[j];
-                res += entry.marker + entry.seriesName + ': ' + entry.value + '<br/>';
-            }
-            return res;
-        }"""
-    )
     
     bar.set_global_opts(
-        title_opts=opts.TitleOpts(title="Enhanced Stacked Bar Chart"),
-        tooltip_opts=opts.TooltipOpts(
-            trigger="axis", 
-            axis_pointer_type="shadow",
-            formatter=tooltip_formatter
-        ),
+        title_opts=opts.TitleOpts(title="Diagnostic Minimal Chart"),
+        tooltip_opts=opts.TooltipOpts(trigger="axis", axis_pointer_type="shadow"),
         legend_opts=opts.LegendOpts(pos_top="5%"),
         xaxis_opts=opts.AxisOpts(name="Treaty"),
         yaxis_opts=opts.AxisOpts(name="Value"),
