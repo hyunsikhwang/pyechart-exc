@@ -338,52 +338,43 @@ with tab_bar:
     st_pyecharts(bar_chart, height=600, key="stacked_bar_chart_st")
 
 # Improved Tab Resize Script at the end
-# Robust Universal Tab Resize Script
+# Direct Window Resize Dispatcher for Tab Switches
 components.html(
     """
     <script>
       (function () {
-        const runResize = () => {
+        const triggerResize = () => {
+          window.parent.dispatchEvent(new Event("resize"));
           const iframes = window.parent.document.querySelectorAll("iframe");
           iframes.forEach((iframe) => {
             try {
-              if (iframe.contentWindow && iframe.contentWindow.echarts) {
-                const echarts = iframe.contentWindow.echarts;
-                const chartEls = iframe.contentWindow.document.querySelectorAll("div");
-                chartEls.forEach((el) => {
-                  const instance = echarts.getInstanceByDom(el);
-                  if (instance) {
-                    console.log("Forcing resize for chart");
-                    instance.resize();
-                  }
-                });
-              }
-              // Also dispatch standard resize event
               if (iframe.contentWindow) {
                 iframe.contentWindow.dispatchEvent(new Event("resize"));
               }
-            } catch (err) { }
+            } catch (err) {}
           });
         };
 
-        const bindEvents = () => {
+        const bindTabs = () => {
           const doc = window.parent.document;
-          const tabButtons = doc.querySelectorAll('[role="tab"], button[data-baseweb="tab"]');
-          tabButtons.forEach((btn) => {
-            if (!btn.dataset.resizeHandled) {
-              btn.dataset.resizeHandled = "true";
-              btn.addEventListener("click", () => {
-                // Multiple triggers to ensure visibility is established
-                [100, 300, 600, 1000, 1500].forEach(delay => setTimeout(runResize, delay));
+          const tabs = doc.querySelectorAll('[role="tab"], button[data-baseweb="tab"]');
+          tabs.forEach((tab) => {
+            if (!tab.dataset.resizeApplied) {
+              tab.dataset.resizeApplied = "true";
+              tab.addEventListener("click", () => {
+                // Multiple triggers to catch the tab being rendered/visible
+                setTimeout(triggerResize, 100);
+                setTimeout(triggerResize, 500);
+                setTimeout(triggerResize, 1000);
               });
             }
           });
         };
 
-        const observer = new MutationObserver(bindEvents);
+        const observer = new MutationObserver(bindTabs);
         observer.observe(window.parent.document.body, { childList: true, subtree: true });
-        bindEvents();
-        setTimeout(runResize, 1000);
+        bindTabs();
+        setTimeout(triggerResize, 500);
       })();
     </script>
     """,
