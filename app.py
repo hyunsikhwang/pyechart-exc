@@ -45,7 +45,7 @@ def get_fear_greed_data():
 
 
 def build_fear_greed_chart(x_axis, y_axis):
-    line = Line(init_opts=opts.InitOpts(width="100%", height="800px"))
+    line = Line(init_opts=opts.InitOpts(width="100%", height="800px", chart_id="fear_greed_chart"))
     if not x_axis or not y_axis:
         return line.set_global_opts(title_opts=opts.TitleOpts(title="CNN Fear and Greed Index"))
     return (
@@ -96,7 +96,7 @@ def build_stacked_bar_chart():
     data_d = [5, 10, 0, 20, 15]
     data_e = [8, 5, 12, 0, 5]
     
-    bar = Bar(init_opts=opts.InitOpts(width="100%", height="600px"))
+    bar = Bar(init_opts=opts.InitOpts(width="100%", height="600px", chart_id="stacked_bar_chart"))
     bar.add_xaxis(categories)
     bar.add_yaxis("Category A", data_a, stack="stack1")
     bar.add_yaxis("Category B", data_b, stack="stack1")
@@ -224,7 +224,7 @@ def get_bond_yield_data():
 
 
 def build_bond_yield_chart(df_tot):
-    line = Line(init_opts=opts.InitOpts(width="100%", height="600px"))
+    line = Line(init_opts=opts.InitOpts(width="100%", height="600px", chart_id="bond_yield_chart"))
     if df_tot.empty:
         return line.set_global_opts(title_opts=opts.TitleOpts(title="Bond Yields"))
 
@@ -267,7 +267,7 @@ with tab1:
     x_axis, y_axis = st.session_state["fear_greed_data"]
     if x_axis and y_axis:
         fear_greed_chart = build_fear_greed_chart(x_axis, y_axis)
-        st_pyecharts(fear_greed_chart, height="800px", key="fear-greed-chart")
+        st_pyecharts(fear_greed_chart, height="800px", key="fear_greed_chart_st")
     else:
         st.error("Failed to load Fear and Greed Index data.")
 
@@ -326,7 +326,7 @@ with tab6:
                 bond_yield_chart = build_bond_yield_chart(bond_df)
                 # Use a combined key of length to force redraw if data changes
                 chart_key = f"bond-yield-chart-{len(bond_df)}"
-                st_pyecharts(bond_yield_chart, height="600px", key=chart_key)
+                st_pyecharts(bond_yield_chart, height="600px", key=f"bond_yield_chart_st_{len(bond_df)}")
             except Exception as e:
                 st.error(f"Error building or rendering chart: {e}")
                 st.write(bond_df.head()) # Fallback: show data table
@@ -335,7 +335,7 @@ with tab_bar:
     st.subheader("Stacked Bar Chart Example")
     st.write("If the chart is not appearing, please try switching tabs or refreshing.")
     bar_chart = build_stacked_bar_chart()
-    st_pyecharts(bar_chart, height=600, key="stacked-bar-chart-v2")
+    st_pyecharts(bar_chart, height=600, key="stacked_bar_chart_st")
 
 # Improved Tab Resize Script at the end
 # Robust Universal Tab Resize Script
