@@ -143,9 +143,15 @@ def build_stacked_bar_chart():
     return bar
 
 
-tab1, tab6, tab_bar = st.tabs(["Fear and Greed Index", "Bond Yield", "Stacked Bar Chart"])
-
-# Moving the script to the end of the file for better reliability
+tab_labels = ["Fear and Greed Index", "Bond Yield", "Stacked Bar Chart"]
+# Use a single active tab selector to avoid initializing charts in hidden containers.
+active_tab = st.radio(
+    "Tabs",
+    tab_labels,
+    horizontal=True,
+    label_visibility="collapsed",
+    key="active_tab",
+)
 
 
 # Removed cache to prevent stale empty data and enable manual refresh
@@ -256,7 +262,7 @@ def build_bond_yield_chart(df_tot):
     )
 
 
-with tab1:
+if active_tab == tab_labels[0]:
     # Always try to fetch F&G data if it's empty
     if not st.session_state["fear_greed_data"][0]:
         with st.spinner("Fetching Fear and Greed Index..."):
@@ -271,7 +277,7 @@ with tab1:
     else:
         st.error("Failed to load Fear and Greed Index data.")
 
-with tab6:
+elif active_tab == tab_labels[1]:
     st.subheader("Bond Yield Data")
     
     # Initialize error tracking
@@ -331,77 +337,8 @@ with tab6:
                 st.error(f"Error building or rendering chart: {e}")
                 st.write(bond_df.head()) # Fallback: show data table
 
-with tab_bar:
+else:
     st.subheader("Stacked Bar Chart Example")
     st.write("If the chart is not appearing, please try switching tabs or refreshing.")
     bar_chart = build_stacked_bar_chart()
     st_pyecharts(bar_chart, height=600, key="stacked_bar_chart")
-
-# Improved Tab Resize Script at the end
-# Comprehensive Tab Visibility & Resize Watcher
-components.html(
-    """
-    <script>
-      (function () {
-        const runResize = () => {
-          const iframes = window.parent.document.querySelectorAll("iframe");
-          iframes.forEach((iframe) => {
-            try {
-              // 1. Re-trigger ECharts resize directly if possible
-              if (iframe.contentWindow && iframe.contentWindow.echarts) {
-                const echarts = iframe.contentWindow.echarts;
-                const divs = iframe.contentWindow.document.querySelectorAll("div");
-                divs.forEach((el) => {
-                  const instance = echarts.getInstanceByDom(el);
-                  if (instance) { instance.resize(); }
-                });
-              }
-              // 2. Dispatch window resize event globally
-              if (iframe.contentWindow) {
-                iframe.contentWindow.dispatchEvent(new Event("resize"));
-              }
-            } catch (err) { }
-          });
-          window.parent.dispatchEvent(new Event("resize"));
-        };
-
-        // MutationObserver to watch for any changes in the parent DOM (like tab switching)
-        const observer = new MutationObserver((mutations) => {
-          let shouldResize = false;
-          mutations.forEach(m => {
-            if (m.type === 'attributes' && (m.attributeName === 'aria-selected' || m.attributeName === 'hidden' || m.attributeName === 'style')) {
-              shouldResize = true;
-            }
-          });
-          if (shouldResize) {
-            setTimeout(runResize, 100);
-            setTimeout(runResize, 500);
-          }
-        });
-
-        const startWatching = () => {
-          const doc = window.parent.document;
-          // Watch the main Streamlit container for tab/layout changes
-          const container = doc.querySelector('.main') || doc.body;
-          observer.observe(container, { attributes: true, subtree: true, childList: true });
-          
-          // Fallback: Click listeners on anything that looks like a tab
-          const tabs = doc.querySelectorAll('[role="tab"], button[data-baseweb="tab"]');
-          tabs.forEach(tab => {
-            if (!tab.dataset.resizeBound) {
-              tab.dataset.resizeBound = "true";
-              tab.addEventListener("click", () => {
-                setTimeout(runResize, 200);
-                setTimeout(runResize, 600);
-              });
-            }
-          });
-        };
-
-        startWatching();
-        setTimeout(runResize, 1000);
-      })();
-    </script>
-    """,
-    height=0,
-)
