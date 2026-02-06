@@ -1,7 +1,7 @@
 from pyecharts import options as opts
 from streamlit_echarts import st_pyecharts
 import streamlit as st
-from pyecharts.charts import Line
+from pyecharts.charts import Line, Bar
 from pyecharts.commons.utils import JsCode
 import requests
 import bs4
@@ -88,7 +88,28 @@ def build_fear_greed_chart(x_axis, y_axis):
     )
 
 
-tab1, tab6 = st.tabs(["Fear and Greed Index", "Bond Yield"])
+def build_stacked_bar_chart():
+    categories = ["treaty1", "treaty2", "treaty3", "treaty4", "treaty5"]
+    # Data provided by the user
+    data1 = [10, 20, 30, 100, 50]
+    # Dummy data to demonstrate stacking
+    data2 = [15, 25, 20, 30, 40]
+    
+    bar = Bar(init_opts=opts.InitOpts(width="100%", height="600px"))
+    bar.add_xaxis(categories)
+    bar.add_yaxis("Category A", data1, stack="stack1")
+    bar.add_yaxis("Category B", data2, stack="stack1")
+    bar.set_global_opts(
+        title_opts=opts.TitleOpts(title="Stacked Bar Chart"),
+        tooltip_opts=opts.TooltipOpts(trigger="axis", axis_pointer_type="shadow"),
+        legend_opts=opts.LegendOpts(pos_top="5%"),
+        xaxis_opts=opts.AxisOpts(name="Treaty"),
+        yaxis_opts=opts.AxisOpts(name="Value"),
+    )
+    return bar
+
+
+tab1, tab6, tab_bar = st.tabs(["Fear and Greed Index", "Bond Yield", "Stacked Bar Chart"])
 
 components.html(
     """
@@ -350,3 +371,8 @@ with tab6:
             except Exception as e:
                 st.error(f"Error building or rendering chart: {e}")
                 st.write(bond_df.head()) # Fallback: show data table
+
+with tab_bar:
+    st.subheader("Stacked Bar Chart Example")
+    bar_chart = build_stacked_bar_chart()
+    st_pyecharts(bar_chart, height="600px", key="stacked-bar-chart")
