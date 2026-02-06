@@ -111,82 +111,7 @@ def build_stacked_bar_chart():
 
 tab1, tab6, tab_bar = st.tabs(["Fear and Greed Index", "Bond Yield", "Stacked Bar Chart"])
 
-components.html(
-    """
-    <script>
-      (function () {
-        const runResize = () => {
-          const iframes = window.parent.document.querySelectorAll("iframe");
-          iframes.forEach((iframe) => {
-            try {
-              if (iframe.contentWindow) {
-                // Trigger standard window resize
-                iframe.contentWindow.dispatchEvent(new Event("resize"));
-                
-                // If ECharts is present, force resize all instances
-                if (iframe.contentWindow.echarts) {
-                  const echarts = iframe.contentWindow.echarts;
-                  const chartEls = iframe.contentWindow.document.querySelectorAll("div");
-                  chartEls.forEach((el) => {
-                    const instance = echarts.getInstanceByDom(el);
-                    if (instance) {
-                      instance.resize();
-                    }
-                  });
-                }
-              }
-            } catch (err) {
-              // Ignore cross-frame access errors.
-            }
-          });
-        };
-
-        const bindEvents = () => {
-          const doc = window.parent.document;
-          
-          // Modern Streamlit tab selectors
-          const tabSelectors = [
-            '[role="tab"]', 
-            'button[data-baseweb="tab"]',
-            '.st-ae' // Common internal class for tabs
-          ];
-          
-          tabSelectors.forEach(selector => {
-            const elements = doc.querySelectorAll(selector);
-            elements.forEach((el) => {
-              if (!el.dataset.resizeBound) {
-                el.dataset.resizeBound = "true";
-                el.addEventListener("click", () => {
-                  // Multiple triggers for reliability
-                  setTimeout(runResize, 100);
-                  setTimeout(runResize, 300);
-                  setTimeout(runResize, 600);
-                });
-              }
-            });
-          });
-        };
-
-        const observeChanges = () => {
-          const doc = window.parent.document;
-          const observer = new MutationObserver(() => bindEvents());
-          observer.observe(doc.body, { childList: true, subtree: true });
-          bindEvents();
-        };
-
-        // Fallback: Run once on visibility change or click anywhere
-        document.addEventListener("visibilitychange", () => {
-          if (!document.hidden) runResize();
-        });
-        window.addEventListener("resize", runResize);
-        window.parent.addEventListener("click", () => setTimeout(runResize, 300));
-        
-        observeChanges();
-      })();
-    </script>
-    """,
-    height=0,
-)
+# Moving the script to the end of the file for better reliability
 
 
 # Removed cache to prevent stale empty data and enable manual refresh
@@ -374,5 +299,56 @@ with tab6:
 
 with tab_bar:
     st.subheader("Stacked Bar Chart Example")
+    st.write("If the chart is not appearing, please try switching tabs or refreshing.")
     bar_chart = build_stacked_bar_chart()
-    st_pyecharts(bar_chart, height="600px", key="stacked-bar-chart")
+    st_pyecharts(bar_chart, height=600, key="stacked-bar-chart-v2")
+
+# Improved Tab Resize Script at the end
+components.html(
+    """
+    <script>
+      (function () {
+        const runResize = () => {
+          const iframes = window.parent.document.querySelectorAll("iframe");
+          iframes.forEach((iframe) => {
+            try {
+              if (iframe.contentWindow && iframe.contentWindow.echarts) {
+                const echarts = iframe.contentWindow.echarts;
+                const chartEls = iframe.contentWindow.document.querySelectorAll("div");
+                chartEls.forEach((el) => {
+                  const instance = echarts.getInstanceByDom(el);
+                  if (instance) {
+                    console.log("Resizing chart in iframe");
+                    instance.resize();
+                  }
+                });
+              }
+            } catch (err) { }
+          });
+        };
+
+        const bindEvents = () => {
+          const doc = window.parent.document;
+          const tabButtons = doc.querySelectorAll('[role="tab"], button[data-baseweb="tab"]');
+          tabButtons.forEach((btn) => {
+            if (!btn.dataset.resizeHandled) {
+              btn.dataset.resizeHandled = "true";
+              btn.addEventListener("click", () => {
+                setTimeout(runResize, 200);
+                setTimeout(runResize, 500);
+              });
+            }
+          });
+        };
+
+        const observer = new MutationObserver(bindEvents);
+        observer.observe(window.parent.document.body, { childList: true, subtree: true });
+        bindEvents();
+        
+        // Initial run
+        setTimeout(runResize, 1000);
+      })();
+    </script>
+    """,
+    height=0,
+)
