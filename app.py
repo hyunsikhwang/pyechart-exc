@@ -267,7 +267,7 @@ with tab1:
     x_axis, y_axis = st.session_state["fear_greed_data"]
     if x_axis and y_axis:
         fear_greed_chart = build_fear_greed_chart(x_axis, y_axis)
-        st_pyecharts(fear_greed_chart, height="800px", key="fear_greed_chart_st")
+        st_pyecharts(fear_greed_chart, height=800, key="fear_greed_chart")
     else:
         st.error("Failed to load Fear and Greed Index data.")
 
@@ -326,7 +326,7 @@ with tab6:
                 bond_yield_chart = build_bond_yield_chart(bond_df)
                 # Use a combined key of length to force redraw if data changes
                 chart_key = f"bond-yield-chart-{len(bond_df)}"
-                st_pyecharts(bond_yield_chart, height="600px", key=f"bond_yield_chart_st_{len(bond_df)}")
+                st_pyecharts(bond_yield_chart, height=600, key=f"bond_yield_chart_{len(bond_df)}")
             except Exception as e:
                 st.error(f"Error building or rendering chart: {e}")
                 st.write(bond_df.head()) # Fallback: show data table
@@ -335,46 +335,71 @@ with tab_bar:
     st.subheader("Stacked Bar Chart Example")
     st.write("If the chart is not appearing, please try switching tabs or refreshing.")
     bar_chart = build_stacked_bar_chart()
-    st_pyecharts(bar_chart, height=600, key="stacked_bar_chart_st")
+    st_pyecharts(bar_chart, height=600, key="stacked_bar_chart")
 
 # Improved Tab Resize Script at the end
-# Direct Window Resize Dispatcher for Tab Switches
+# Comprehensive Tab Visibility & Resize Watcher
 components.html(
     """
     <script>
       (function () {
-        const triggerResize = () => {
-          window.parent.dispatchEvent(new Event("resize"));
+        const runResize = () => {
           const iframes = window.parent.document.querySelectorAll("iframe");
           iframes.forEach((iframe) => {
             try {
+              // 1. Re-trigger ECharts resize directly if possible
+              if (iframe.contentWindow && iframe.contentWindow.echarts) {
+                const echarts = iframe.contentWindow.echarts;
+                const divs = iframe.contentWindow.document.querySelectorAll("div");
+                divs.forEach((el) => {
+                  const instance = echarts.getInstanceByDom(el);
+                  if (instance) { instance.resize(); }
+                });
+              }
+              // 2. Dispatch window resize event globally
               if (iframe.contentWindow) {
                 iframe.contentWindow.dispatchEvent(new Event("resize"));
               }
-            } catch (err) {}
+            } catch (err) { }
           });
+          window.parent.dispatchEvent(new Event("resize"));
         };
 
-        const bindTabs = () => {
+        // MutationObserver to watch for any changes in the parent DOM (like tab switching)
+        const observer = new MutationObserver((mutations) => {
+          let shouldResize = false;
+          mutations.forEach(m => {
+            if (m.type === 'attributes' && (m.attributeName === 'aria-selected' || m.attributeName === 'hidden' || m.attributeName === 'style')) {
+              shouldResize = true;
+            }
+          });
+          if (shouldResize) {
+            setTimeout(runResize, 100);
+            setTimeout(runResize, 500);
+          }
+        });
+
+        const startWatching = () => {
           const doc = window.parent.document;
+          // Watch the main Streamlit container for tab/layout changes
+          const container = doc.querySelector('.main') || doc.body;
+          observer.observe(container, { attributes: true, subtree: true, childList: true });
+          
+          // Fallback: Click listeners on anything that looks like a tab
           const tabs = doc.querySelectorAll('[role="tab"], button[data-baseweb="tab"]');
-          tabs.forEach((tab) => {
-            if (!tab.dataset.resizeApplied) {
-              tab.dataset.resizeApplied = "true";
+          tabs.forEach(tab => {
+            if (!tab.dataset.resizeBound) {
+              tab.dataset.resizeBound = "true";
               tab.addEventListener("click", () => {
-                // Multiple triggers to catch the tab being rendered/visible
-                setTimeout(triggerResize, 100);
-                setTimeout(triggerResize, 500);
-                setTimeout(triggerResize, 1000);
+                setTimeout(runResize, 200);
+                setTimeout(runResize, 600);
               });
             }
           });
         };
 
-        const observer = new MutationObserver(bindTabs);
-        observer.observe(window.parent.document.body, { childList: true, subtree: true });
-        bindTabs();
-        setTimeout(triggerResize, 500);
+        startWatching();
+        setTimeout(runResize, 1000);
       })();
     </script>
     """,
