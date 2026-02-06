@@ -144,6 +144,48 @@ def build_stacked_bar_chart():
 
 
 tab_labels = ["Fear and Greed Index", "Bond Yield", "Stacked Bar Chart"]
+
+st.markdown(
+    """
+    <style>
+      div[data-testid="stRadio"] > div[role="radiogroup"] {
+        display: flex;
+        gap: 0.5rem;
+        background: #f6f7f9;
+        border: 1px solid #e3e6ea;
+        padding: 0.25rem;
+        border-radius: 10px;
+      }
+      div[data-testid="stRadio"] label {
+        margin: 0;
+        padding: 0.5rem 0.9rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #39414d;
+        background: transparent;
+        border: 1px solid transparent;
+      }
+      div[data-testid="stRadio"] label:hover {
+        background: #e9eef5;
+      }
+      div[data-testid="stRadio"] input:checked + div {
+        background: #ffffff;
+        border: 1px solid #d7dbe1;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        color: #111827;
+      }
+      div[data-testid="stRadio"] label > div {
+        padding: 0;
+      }
+      div[data-testid="stRadio"] label > div > div {
+        margin: 0;
+      }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Use a single active tab selector to avoid initializing charts in hidden containers.
 active_tab = st.radio(
     "Tabs",
