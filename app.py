@@ -91,16 +91,51 @@ def build_fear_greed_chart(x_axis, y_axis):
 def build_stacked_bar_chart():
     categories = ["treaty1", "treaty2", "treaty3", "treaty4", "treaty5"]
     data_a = [10, 20, 30, 100, 50]
-    data_b = [15, 25, 20, 30, 40]
+    data_b = [0, 15, 20, 30, 0]
+    data_c = [15, 0, 15, 40, 10]
+    data_d = [5, 10, 0, 20, 15]
+    data_e = [8, 5, 12, 0, 5]
     
     bar = Bar(init_opts=opts.InitOpts(width="100%", height="600px"))
     bar.add_xaxis(categories)
     bar.add_yaxis("Category A", data_a, stack="stack1")
     bar.add_yaxis("Category B", data_b, stack="stack1")
+    bar.add_yaxis("Category C", data_c, stack="stack1")
+    bar.add_yaxis("Category D", data_d, stack="stack1")
+    bar.add_yaxis("Category E", data_e, stack="stack1")
+    
+    tooltip_formatter = JsCode(
+        """function (params) {
+            if (!params) return "";
+            var items = Array.isArray(params) ? params : [params];
+            if (items.length === 0) return "";
+            var header = items[0].axisValue || items[0].name || "";
+            var res = '<b>' + header + '</b><br/>';
+            var list = [];
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                if (!item) continue;
+                var val = Array.isArray(item.value) ? item.value[1] : item.value;
+                if (val !== 0 && val !== undefined && val !== null) {
+                    list.push({marker: item.marker || "", seriesName: item.seriesName || "", value: val});
+                }
+            }
+            list.sort(function (a, b) { return (b.value || 0) - (a.value || 0); });
+            for (var j = 0; j < list.length; j++) {
+                var entry = list[j];
+                res += entry.marker + entry.seriesName + ': ' + entry.value + '<br/>';
+            }
+            return res;
+        }"""
+    )
     
     bar.set_global_opts(
-        title_opts=opts.TitleOpts(title="Diagnostic Minimal Chart"),
-        tooltip_opts=opts.TooltipOpts(trigger="axis", axis_pointer_type="shadow"),
+        title_opts=opts.TitleOpts(title="Enhanced Stacked Bar Chart"),
+        tooltip_opts=opts.TooltipOpts(
+            trigger="axis", 
+            axis_pointer_type="shadow",
+            formatter=tooltip_formatter
+        ),
         legend_opts=opts.LegendOpts(pos_top="5%"),
         xaxis_opts=opts.AxisOpts(name="Treaty"),
         yaxis_opts=opts.AxisOpts(name="Value"),
@@ -303,6 +338,7 @@ with tab_bar:
     st_pyecharts(bar_chart, height=600, key="stacked-bar-chart-v2")
 
 # Improved Tab Resize Script at the end
+# Robust Universal Tab Resize Script
 components.html(
     """
     <script>
@@ -317,10 +353,14 @@ components.html(
                 chartEls.forEach((el) => {
                   const instance = echarts.getInstanceByDom(el);
                   if (instance) {
-                    console.log("Resizing chart in iframe");
+                    console.log("Forcing resize for chart");
                     instance.resize();
                   }
                 });
+              }
+              // Also dispatch standard resize event
+              if (iframe.contentWindow) {
+                iframe.contentWindow.dispatchEvent(new Event("resize"));
               }
             } catch (err) { }
           });
@@ -333,8 +373,8 @@ components.html(
             if (!btn.dataset.resizeHandled) {
               btn.dataset.resizeHandled = "true";
               btn.addEventListener("click", () => {
-                setTimeout(runResize, 200);
-                setTimeout(runResize, 500);
+                // Multiple triggers to ensure visibility is established
+                [100, 300, 600, 1000, 1500].forEach(delay => setTimeout(runResize, delay));
               });
             }
           });
@@ -343,7 +383,6 @@ components.html(
         const observer = new MutationObserver(bindEvents);
         observer.observe(window.parent.document.body, { childList: true, subtree: true });
         bindEvents();
-        
         setTimeout(runResize, 1000);
       })();
     </script>
