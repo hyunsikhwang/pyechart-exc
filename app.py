@@ -106,30 +106,41 @@ def build_stacked_bar_chart():
     bar.add_yaxis("Category D", data_d, stack="stack1")
     bar.add_yaxis("Category E", data_e, stack="stack1")
     
-    # Custom JS Tooltip logic
+    # Custom JS Tooltip logic - More robust version to prevent Component Error
     tooltip_formatter = JsCode(
         """
         function (params) {
-            if (!params || params.length === 0) return '';
-            var res = '<b>' + params[0].name + '</b><br/>';
+            if (!params) return "";
+            var items = Array.isArray(params) ? params : [params];
+            if (items.length === 0) return "";
             
-            // Filter out 0 values and sort descending
-            var filtered = params.filter(function (item) {
-                // pyecharts might pass value as an array [x, y] or just y depending on config
+            var header = items[0].axisValue || items[0].name || "";
+            var res = '<b>' + header + '</b><br/>';
+            
+            var list = [];
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                if (!item) continue;
+                
                 var val = Array.isArray(item.value) ? item.value[1] : item.value;
-                return val !== 0 && val !== undefined && val !== null;
+                if (val !== 0 && val !== undefined && val !== null) {
+                    list.push({
+                        marker: item.marker || "",
+                        seriesName: item.seriesName || "",
+                        value: val
+                    });
+                }
+            }
+            
+            // Sort Descending
+            list.sort(function (a, b) {
+                return (b.value || 0) - (a.value || 0);
             });
             
-            filtered.sort(function (a, b) {
-                var valA = Array.isArray(a.value) ? a.value[1] : a.value;
-                var valB = Array.isArray(b.value) ? b.value[1] : b.value;
-                return valB - valA;
-            });
-            
-            filtered.forEach(function (item) {
-                var val = Array.isArray(item.value) ? item.value[1] : item.value;
-                res += item.marker + item.seriesName + ': ' + val + '<br/>';
-            });
+            for (var j = 0; j < list.length; j++) {
+                var entry = list[j];
+                res += entry.marker + entry.seriesName + ': ' + entry.value + '<br/>';
+            }
             
             return res;
         }
