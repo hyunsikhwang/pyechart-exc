@@ -284,58 +284,53 @@ elif active_tab == tab_labels[1]:
     if 'bond_fetch_errors' not in st.session_state:
         st.session_state['bond_fetch_errors'] = []
 
-    # 1. Provide a clear button for loading/refreshing
+    # Auto-load data when entering this tab if not loaded yet.
     if st.session_state["bond_yield_df"].empty:
-        st.info("Bond yield data is not loaded yet. Click the button below to fetch it.")
-        if st.button("Load Bond Data"):
+        st.session_state['bond_fetch_errors'] = []  # Reset errors
+        with st.spinner("Fetching data from ECOS... This may take a minute."):
+            df_tot = get_bond_yield_data()
+            if not df_tot.empty:
+                st.session_state["bond_yield_df"] = df_tot
+                st.session_state["bond_data_loading_triggered"] = True
+            else:
+                st.error("Fetched dataframe is empty.")
+                if st.session_state['bond_fetch_errors']:
+                    for err in st.session_state['bond_fetch_errors']:
+                        st.warning(err)
+
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        if st.button("Refresh Bond Data"):
             st.session_state['bond_fetch_errors'] = [] # Reset errors
-            with st.spinner("Fetching data from ECOS... This may take a minute."):
+            with st.spinner("Refreshing bond yield data..."):
                 df_tot = get_bond_yield_data()
                 if not df_tot.empty:
                     st.session_state["bond_yield_df"] = df_tot
-                    st.session_state["bond_data_loading_triggered"] = True
+                    st.success("Refreshed!")
                     st.rerun()
                 else:
-                    st.error("Fetched dataframe is empty.")
-                    if st.session_state['bond_fetch_errors']:
-                        for err in st.session_state['bond_fetch_errors']:
-                            st.warning(err)
-    else:
-        col1, col2 = st.columns([1, 4])
-        with col1:
-            if st.button("Refresh Bond Data"):
-                st.session_state['bond_fetch_errors'] = [] # Reset errors
-                with st.spinner("Refreshing bond yield data..."):
-                    df_tot = get_bond_yield_data()
-                    if not df_tot.empty:
-                        st.session_state["bond_yield_df"] = df_tot
-                        st.success("Refreshed!")
-                        st.rerun()
-                    else:
-                        st.warning("Refresh failed or returned no data.")
+                    st.warning("Refresh failed or returned no data.")
 
-        # 2. Display the chart if data exists
-        bond_df = st.session_state["bond_yield_df"]
-        if not bond_df.empty:
-            # Show summary info
-            min_date = bond_df['TIME'].min().strftime('%Y-%m-%d')
-            max_date = bond_df['TIME'].max().strftime('%Y-%m-%d')
-            st.caption(f"Showing {len(bond_df)} data points from {min_date} to {max_date}")
-            
-            # Show any fetch errors that occurred but didn't stop everything
-            if st.session_state.get('bond_fetch_errors'):
-                with st.expander("Some errors occurred during fetch"):
-                    for err in st.session_state['bond_fetch_errors']:
-                        st.text(err)
+    # Display the chart if data exists
+    bond_df = st.session_state["bond_yield_df"]
+    if not bond_df.empty:
+        # Show summary info
+        min_date = bond_df['TIME'].min().strftime('%Y-%m-%d')
+        max_date = bond_df['TIME'].max().strftime('%Y-%m-%d')
+        st.caption(f"Showing {len(bond_df)} data points from {min_date} to {max_date}")
+        
+        # Show any fetch errors that occurred but didn't stop everything
+        if st.session_state.get('bond_fetch_errors'):
+            with st.expander("Some errors occurred during fetch"):
+                for err in st.session_state['bond_fetch_errors']:
+                    st.text(err)
 
-            try:
-                bond_yield_chart = build_bond_yield_chart(bond_df)
-                # Use a combined key of length to force redraw if data changes
-                chart_key = f"bond-yield-chart-{len(bond_df)}"
-                st_pyecharts(bond_yield_chart, height=600, key=f"bond_yield_chart_{len(bond_df)}")
-            except Exception as e:
-                st.error(f"Error building or rendering chart: {e}")
-                st.write(bond_df.head()) # Fallback: show data table
+        try:
+            bond_yield_chart = build_bond_yield_chart(bond_df)
+            st_pyecharts(bond_yield_chart, height=600, key=f"bond_yield_chart_{len(bond_df)}")
+        except Exception as e:
+            st.error(f"Error building or rendering chart: {e}")
+            st.write(bond_df.head()) # Fallback: show data table
 
 else:
     st.subheader("Stacked Bar Chart Example")
