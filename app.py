@@ -3,7 +3,6 @@ from streamlit_echarts import st_pyecharts
 import streamlit as st
 import streamlit_shadcn_ui as ui
 from pyecharts.charts import Line, Bar
-from pyecharts.commons.utils import JsCode
 import requests
 import bs4
 import json
@@ -59,11 +58,7 @@ def build_fear_greed_chart(x_axis, y_axis):
             ),
             is_smooth=True,
             is_step=False,
-            label_opts=opts.LabelOpts(
-                formatter=JsCode(
-                    "function(params){return params.value[1].toFixed(1);}"
-                )
-            ),
+            label_opts=opts.LabelOpts(is_show=False),
             markline_opts=opts.MarkLineOpts(data=[opts.MarkLineItem(type_="average")]),
         )
         .set_series_opts(
@@ -80,9 +75,8 @@ def build_fear_greed_chart(x_axis, y_axis):
         .set_global_opts(
             title_opts=opts.TitleOpts(title="CNN Fear and Greed Index"),
             tooltip_opts=opts.TooltipOpts(
-                formatter=JsCode(
-                    "function (params) {return params.value[0] + '<br>' + params.value[1].toFixed(1);}"
-                )
+                trigger="axis",
+                formatter="{b}<br/>Index: {c}",
             ),
             xaxis_opts=opts.AxisOpts(interval=0, boundary_gap=False),
         )
@@ -105,37 +99,11 @@ def build_stacked_bar_chart():
     bar.add_yaxis("Category D", data_d, stack="stack1")
     bar.add_yaxis("Category E", data_e, stack="stack1")
     
-    tooltip_formatter = JsCode(
-        """function (params) {
-            if (!params) return "";
-            var items = Array.isArray(params) ? params : [params];
-            if (items.length === 0) return "";
-            var header = items[0].axisValue || items[0].name || "";
-            var res = '<b>' + header + '</b><br/>';
-            var list = [];
-            for (var i = 0; i < items.length; i++) {
-                var item = items[i];
-                if (!item) continue;
-                var val = Array.isArray(item.value) ? item.value[1] : item.value;
-                if (val !== 0 && val !== undefined && val !== null) {
-                    list.push({marker: item.marker || "", seriesName: item.seriesName || "", value: val});
-                }
-            }
-            list.sort(function (a, b) { return (b.value || 0) - (a.value || 0); });
-            for (var j = 0; j < list.length; j++) {
-                var entry = list[j];
-                res += entry.marker + entry.seriesName + ': ' + entry.value + '<br/>';
-            }
-            return res;
-        }"""
-    )
-    
     bar.set_global_opts(
         title_opts=opts.TitleOpts(title="Enhanced Stacked Bar Chart"),
         tooltip_opts=opts.TooltipOpts(
             trigger="axis", 
             axis_pointer_type="shadow",
-            formatter=tooltip_formatter
         ),
         legend_opts=opts.LegendOpts(pos_top="5%"),
         xaxis_opts=opts.AxisOpts(name="Treaty"),
