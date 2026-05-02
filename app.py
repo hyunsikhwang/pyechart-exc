@@ -165,6 +165,8 @@ def get_bond_yield_data():
                 else:
                     error_msg = data.get('RESULT', {}).get('MESSAGE', 'Unknown Error')
                     print(f"API Error for {bondcd1}: {error_msg}")
+                    if last_date and '해당하는 데이터가 없습니다' in error_msg:
+                        continue
                     if 'bond_fetch_errors' not in st.session_state:
                          st.session_state['bond_fetch_errors'] = []
                     st.session_state['bond_fetch_errors'].append(f"{bondcd1}: {error_msg}")
@@ -241,7 +243,7 @@ if active_tab == tab_labels[0]:
     x_axis, y_axis = st.session_state["fear_greed_data"]
     if x_axis and y_axis:
         fear_greed_chart = build_fear_greed_chart(x_axis, y_axis)
-        st_pyecharts(fear_greed_chart, height=800, key="fear_greed_chart")
+        st_pyecharts(fear_greed_chart, height="800px", key="fear_greed_chart")
     else:
         st.error("Failed to load Fear and Greed Index data.")
 
@@ -295,7 +297,7 @@ elif active_tab == tab_labels[1]:
 
         try:
             bond_yield_chart = build_bond_yield_chart(bond_df)
-            st_pyecharts(bond_yield_chart, height=600, key=f"bond_yield_chart_{len(bond_df)}")
+            st_pyecharts(bond_yield_chart, height="600px", key=f"bond_yield_chart_{len(bond_df)}")
         except Exception as e:
             st.error(f"Error building or rendering chart: {e}")
             st.write(bond_df.head()) # Fallback: show data table
@@ -304,4 +306,4 @@ else:
     st.subheader("Stacked Bar Chart Example")
     st.write("If the chart is not appearing, please try switching tabs or refreshing.")
     bar_chart = build_stacked_bar_chart()
-    st_pyecharts(bar_chart, height=600, key="stacked_bar_chart")
+    st_pyecharts(bar_chart, height="600px", key="stacked_bar_chart")
